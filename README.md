@@ -1,164 +1,105 @@
-You are a senior full-stack engineer. Help me design and implement a production-ready internal web application similar to Jira, with time tracking features similar to tempo (but simplified) and with a built-in documentation system (but simplified).
+# Jari
 
-## Goal
-Build an internal project management system with:
-- Issue tracking (Jira-like)
-- Time tracking (Tempo-like)
-- Project documentation (wiki-style, Confluence-like but minimal)
+A Jira-like project management system with time tracking and built-in project documentation.
 
----
+## Features
 
-## Core Constraints
-- Single organization (no multi-tenancy)
-- No public signup (users are managed by admins via backoffice)
-- Session-based authentication (Spring Security)
-- REST API only (no GraphQL)
-- API contract testing via Postman/Newman (no unit tests)
-- Keep the documentation system simple (no versioning)
+- **Issue Tracking** — Create, assign, and manage issues with priorities, labels, types, and statuses
+- **Kanban Board** — Drag-and-drop issue cards between status columns
+- **Time Tracking** — Log hours against issues, weekly timesheet view, time reports
+- **Project Documentation** — Wiki-style pages with nested tree structure and search
+- **Sprint Management** — Backlog view, sprint creation, issue assignment to sprints
+- **Admin Panel** — User management, programs, organization config, issue types/statuses
+- **Role-Based Access** — Admin, Manager, and Contributor roles with appropriate permissions
 
----
+## Tech Stack
 
-## Core Features
+**Backend:** Java 21, Spring Boot 3, Spring Security (session-based auth), JPA/Hibernate, H2 Database
 
-### 1. User & Access Management
-- Admin-created users (CRUD from backoffice)
-- Roles: Admin, Manager, Contributor
-- Session-based authentication
-- Role-based access control
+**Frontend:** React 18, TypeScript, Zustand, Tailwind CSS v4, Vite, React Router v6
 
----
+**Build:** Gradle (monorepo)
 
-### 2. Project Management
-- Programs with :
-  - Name, key, description
-  - Program manager 
-- Projects with:
-  - Name, key, description
-  - Project manager
-- Members assigned to projects 
+## Project Structure
 
----
+```
+jari/
+├── backend/                   # Spring Boot application
+│   └── src/main/java/com/jari/
+│       ├── attachment/         # File attachments
+│       ├── common/             # Audit, DTOs, exceptions, storage
+│       ├── config/             # Issue types/statuses, org config, data seeder
+│       ├── documentation/     # Wiki pages
+│       ├── issue/             # Issues, comments
+│       ├── program/           # Programs (portfolios)
+│       ├── project/           # Projects, members, labels, board columns
+│       ├── security/          # Auth, Spring Security config
+│       ├── sprint/            # Sprints, backlog
+│       ├── timetracking/      # Time logs, timesheets, reports
+│       └── user/              # Users
+├── frontend/                  # React application
+│   └── src/
+│       ├── api/               # API client modules
+│       ├── components/        # Layout, guards, common components
+│       ├── hooks/             # Custom React hooks
+│       ├── pages/             # Page components
+│       ├── stores/            # Zustand stores
+│       ├── types/             # TypeScript type definitions
+│       └── utils/             # Formatting utilities
+├── docs/                      # Architecture and API documentation
+└── postman/                   # API test collection
+```
 
-### 3. Issue / Ticket System
-- Fields:
-  - Title, description (rich text)
-  - Status (To Do, In Progress, Done, Custom)
-  - Priority
-  - Assignee
-  - Labels
-  - Type (project management, tech lead, architecture, development, data analysis, testing))
-- Comments
+## Getting Started
 
----
+### Prerequisites
 
-### 4. Kanban Board
-- Drag-and-drop between columns (status-based)
-- Column configuration per project
-
----
-
-### 5. Sprint / Backlog
-- Backlog view
-- Create and manage sprints
-- Assign issues to sprints
-
----
-
-### 6. Time Tracking (Tempo-like)
-- Log work on issues (hours, date, description)
-- Timesheets (daily/weekly views per user)
-- Reporting:
-  - Time spent per project
-  - Time spent per user
-  - Time spent per issue
-- Ability to edit/delete logs (with permissions)
-
----
-
-### 7. Project Documentation (Wiki Feature)
-
-Each project includes a documentation section similar to Confluence.
-
-#### Features:
-- Create, edit, and delete documentation pages
-- Pages belong to a project
-- Nested pages (tree structure using parent-child relationship)
-- Rich text content (Markdown)
-- Sidebar navigation with page tree
-- Search pages by title/content
-- Link documentation pages to issues
-
-#### Important Constraints:
-- No versioning (only store latest content)
-- Keep structure simple and performant
-
----
-
-### 8. Search & Filters
-- Filter issues by:
-  - Status, assignee, project, labels, date range
-
----
+- Java 21+
+- Node.js 18+
+- Gradle (via wrapper)
 
 ### Backend
-- Java 21, Spring Boot 3
-- Spring Security (session-based auth)
-- JPA / Hibernate
-- Database: H2 Database (File-based) for portability and rapid prototyping.(will be changed to postgres in production)
+
+```bash
+./gradlew :backend:bootRun
+```
+
+The backend starts at `http://localhost:8080` with an H2 console at `/h2-console`.
 
 ### Frontend
-- React + TypeScript
-- State management with zustand
-- Tailwind CSS
 
-### Repo and build tool
-- Manage both modules within one monorepo.
-- Use Gradle to build the backend and frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
----
+The frontend starts at `http://localhost:5173` and proxies API calls to the backend.
 
-## Requirements
-- Clean, modular architecture (Controller / Service / Repository)
-- Proper relational database design
-- DTO pattern (do not expose entities directly)
-- Input validation and error handling
-- Audit logging for issues and time tracking
+### Default Users
 
----
+The data seeder creates these test accounts:
 
-## Deliverables (step-by-step)
+| Username | Password | Role |
+|----------|----------|------|
+| admin | admin123 | ADMIN |
+| manager | manager123 | MANAGER |
+| contributor | contrib123 | CONTRIBUTOR |
 
-1. High-level system architecture
-2. Database schema design including:
-3. Entity relationships
-4. REST API design:
-   - Auth endpoints
-   - Issue endpoints
-   - Time tracking endpoints
-   - Documentation (wiki) endpoints
-5. Backend structure (packages and layers)
-6. Admin interface to create users and programs and manage general config (organizition name, address, issue types ...), only the user admin can enter this page.
-7. Authentication with landing page, assigned projects and tasks and profile management
-8. Interface for manager view to create and edit projects, contributors and issues
-9. Interface for contributor to log time on worked issues
-10. Documentation module
-11. Kanban board (drag-and-drop)
-12. Timesheet UI
-13. Basic reporting
+## API Overview
 
----
+| Resource | Base Path |
+|----------|-----------|
+| Auth | `/api/auth/*` |
+| Users | `/api/users` |
+| Programs | `/api/programs` |
+| Projects | `/api/projects` |
+| Issues | `/api/projects/{projectId}/issues` |
+| Comments | `/api/projects/{projectId}/issues/{issueId}/comments` |
+| Wiki Pages | `/api/projects/{projectId}/wiki/pages` |
+| Time Logs | `/api/time-logs` |
+| Timesheets | `/api/timesheets` |
+| Sprints | `/api/projects/{projectId}/sprints` |
+| Admin | `/api/admin/*` |
 
-## Constraints for Code
-- Production-quality code (not simplified demos)
-- Follow Spring Boot best practices
-- Avoid overengineering
-- Keep documentation module simple
-
----
-
-## Interaction Rules
-- Ask clarifying questions until you're confident that the context is well understood
-- Proceed step by step and give me opportunity to test
-- Generate only a set of artifacts that makes the project advance one step and let me validate it
-
-
+Full API documentation is available in `docs/rest-api.md` and the Postman collection in `postman/`.
