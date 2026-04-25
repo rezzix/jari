@@ -12,6 +12,7 @@ interface AuthState {
   checkSession: () => Promise<void>;
   clearError: () => void;
   updateUser: (user: Partial<UserDto>) => void;
+  sessionExpired: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -52,6 +53,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   clearError: () => set({ error: null }),
+
+  sessionExpired: () => set({ user: null, isAuthenticated: false, isLoading: false }),
 
   updateUser: (updates) =>
     set((state) => ({

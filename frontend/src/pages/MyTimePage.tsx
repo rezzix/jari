@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/stores/authStore';
-import { listTimeLogs, createTimeLog, deleteTimeLog, getWeeklyTimesheet } from '@/api/timeLogs';
-import type { TimeLogDto } from '@/types';
+import { listTimeLogs, createTimeLog, updateTimeLog, deleteTimeLog, getWeeklyTimesheet } from '@/api/timeLogs';
+import { listProjectIssues } from '@/api/issues';
+import type { TimeLogDto, IssueDto } from '@/types';
 import { formatDate } from '@/utils/format';
 import Spinner from '@/components/common/Spinner';
 
@@ -40,6 +41,17 @@ export default function MyTimePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Edit state
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editHours, setEditHours] = useState('');
+  const [editDate, setEditDate] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+
+  // Issue search for form
+  const [issueSearch, setIssueSearch] = useState('');
+  const [issueResults, setIssueResults] = useState<IssueDto[]>([]);
+  const [issueSearchLoading, setIssueSearchLoading] = useState(false);
+
   const fetchWeek = useCallback(async () => {
     if (!user) return;
     setLoading(true);
@@ -47,7 +59,7 @@ export default function MyTimePage() {
       const data = await getWeeklyTimesheet(user.id, weekStart);
       setWeekData(data.days ?? {});
     } catch {
-      // fallback: fetch all logs for the week
+      // fallback
     } finally {
       setLoading(false);
     }
@@ -68,8 +80,25 @@ export default function MyTimePage() {
     fetchLogs();
   }, [fetchWeek, fetchLogs]);
 
-  const weekDays = getWeekDays(weekStart);
+  // Debounced issue search
+  useEffect(() => {
+    if (!issueSearch.trim()) { setIssueResults([]); return; }
+    setIssueSearchLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        // Search across recent projects — use a simple approach
+        const res = await listProjectIssues(0, { search: issueSearch.trim(), size: 20 });
+        setIssueResults(res);
+      } catch {
+        setIssueResults([]);
+      } finally {
+        setIssueSearchLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [issueSearch]);
 
+  const weekDays = getWeekDays(weekStart);
   const weekTotal = weekDays.reduce((sum, day) => {
     const logs = weekData[day] ?? [];
     return sum + logs.reduce((s, l) => s + l.hours, 0);
@@ -106,6 +135,7 @@ export default function MyTimePage() {
       setFormIssueId('');
       setFormHours('');
       setFormDesc('');
+      setIssueSearch('');
       setShowForm(false);
       fetchWeek();
       fetchLogs();
@@ -116,11 +146,42 @@ export default function MyTimePage() {
     }
   };
 
+  const handleEditSave = async (id: number) => {
+    setSaving(true);
+    setError(null);
+    try {
+      await updateTimeLog(id, {
+        hours: parseFloat(editHours),
+        logDate: editDate,
+        description: editDesc || undefined,
+      });
+      setEditingId(null);
+      fetchWeek();
+      fetchLogs();
+    } catch {
+      setError('Failed to update time log.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const startEdit = (log: TimeLogDto) => {
+    setEditingId(log.id);
+    setEditHours(String(log.hours));
+    setEditDate(log.logDate);
+    setEditDesc(log.description ?? '');
+  };
+
   const handleDelete = async (id: number) => {
     if (!confirm('Delete this time log?')) return;
     await deleteTimeLog(id);
     fetchWeek();
     fetchLogs();
+  };
+
+  const selectIssue = (issue: IssueDto) => {
+    setFormIssueId(String(issue.id));
+    setIssueSearch(`${issue.issueKey}: ${issue.title}`);
   };
 
   if (!user) return null;
@@ -142,16 +203,38 @@ export default function MyTimePage() {
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Issue ID</label>
+            <div className="relative">
+              <label className="block text-xs font-medium text-gray-500 mb-1">Issue</label>
               <input
-                type="number"
-                value={formIssueId}
-                onChange={(e) => setFormIssueId(e.target.value)}
-                required
-                placeholder="e.g. 42"
+                type="text"
+                value={issueSearch}
+                onChange={(e) => { setIssueSearch(e.target.value); if (formIssueId) setFormIssueId(''); }}
+                placeholder="Search issues..."
+                required={!formIssueId}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
+              {formIssueId && (
+                <div className="absolute right-2 top-8 text-xs text-green-600 font-medium">Selected</div>
+              )}
+              {issueSearchLoading && (
+                <div className="absolute right-2 top-8"><Spinner className="h-4 w-4 text-gray-400" /></div>
+              )}
+              {issueResults.length > 0 && !formIssueId && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                  {issueResults.map((issue) => (
+                    <button
+                      key={issue.id}
+                      type="button"
+                      onClick={() => selectIssue(issue)}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm border-b border-gray-100 last:border-0"
+                    >
+                      <span className="font-mono text-xs text-primary-600">{issue.issueKey}</span>
+                      <span className="ml-2 text-gray-700">{issue.title}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              <input type="hidden" value={formIssueId} />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Hours</label>
@@ -245,24 +328,55 @@ export default function MyTimePage() {
         </div>
       )}
 
-      {/* Recent logs */}
+      {/* Recent logs with edit/delete */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-sm font-medium text-gray-500 mb-4">Recent Time Logs</h3>
         {allLogs.length === 0 ? (
           <p className="text-sm text-gray-400">No time logs yet.</p>
         ) : (
           <div className="space-y-2">
-            {allLogs.slice(0, 20).map((l) => (
+            {allLogs.slice(0, 30).map((l) => (
               <div key={l.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-900">{l.issueKey}</span>
-                    <span className="text-sm font-semibold text-gray-700">{l.hours}h</span>
-                    <span className="text-xs text-gray-400">{formatDate(l.logDate)}</span>
+                {editingId === l.id ? (
+                  <div className="flex-1 flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium text-primary-600">{l.issueKey}</span>
+                    <input
+                      type="number" step="0.25" min="0.25" value={editHours}
+                      onChange={(e) => setEditHours(e.target.value)}
+                      className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                    <input
+                      type="date" value={editDate}
+                      onChange={(e) => setEditDate(e.target.value)}
+                      className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                    <input
+                      type="text" value={editDesc}
+                      onChange={(e) => setEditDesc(e.target.value)}
+                      placeholder="Description"
+                      className="flex-1 min-w-[120px] px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                    <button onClick={() => handleEditSave(l.id)} disabled={saving} className="text-green-600 hover:text-green-800 text-xs font-medium">
+                      {saving ? <Spinner className="h-3 w-3" /> : 'Save'}
+                    </button>
+                    <button onClick={() => setEditingId(null)} className="text-gray-500 hover:text-gray-700 text-xs font-medium">Cancel</button>
                   </div>
-                  {l.description && <p className="text-xs text-gray-500 truncate">{l.description}</p>}
-                </div>
-                <button onClick={() => handleDelete(l.id)} className="text-red-600 hover:text-red-800 text-xs font-medium ml-2">Delete</button>
+                ) : (
+                  <>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-primary-600">{l.issueKey}</span>
+                        <span className="text-sm font-semibold text-gray-700">{l.hours}h</span>
+                        <span className="text-xs text-gray-400">{formatDate(l.logDate)}</span>
+                      </div>
+                      {l.description && <p className="text-xs text-gray-500 truncate">{l.description}</p>}
+                    </div>
+                    <div className="flex items-center gap-3 ml-2">
+                      <button onClick={() => startEdit(l)} className="text-primary-600 hover:text-primary-800 text-xs font-medium">Edit</button>
+                      <button onClick={() => handleDelete(l.id)} className="text-red-600 hover:text-red-800 text-xs font-medium">Delete</button>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>

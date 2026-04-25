@@ -14,6 +14,8 @@ import ProjectsPage from '@/pages/ProjectsPage';
 import ProjectDetailPage from '@/pages/ProjectDetailPage';
 import IssueDetailPage from '@/pages/IssueDetailPage';
 import MyTimePage from '@/pages/MyTimePage';
+import TeamTimesheetPage from '@/pages/TeamTimesheetPage';
+import TimeReportsPage from '@/pages/TimeReportsPage';
 
 export default function App() {
   const checkSession = useAuthStore((s) => s.checkSession);
@@ -50,6 +52,8 @@ export default function App() {
           <Route path="/projects/:id" element={<ProjectDetailPage />} />
           <Route path="/projects/:projectId/issues/:issueId" element={<IssueDetailPage />} />
           <Route path="/my-time" element={<MyTimePage />} />
+          <Route path="/timesheets" element={<TeamTimesheetPage />} />
+          <Route path="/reports" element={<TimeReportsPage />} />
           <Route path="/admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>

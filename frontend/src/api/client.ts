@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { ApiResponse, PaginatedResponse } from '@/types';
+import { useAuthStore } from '@/stores/authStore';
 
 const client = axios.create({
   baseURL: '/api',
@@ -7,12 +8,11 @@ const client = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Unwrap ApiResponse/PaginatedResponse envelopes
 client.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      window.location.href = '/login';
+      useAuthStore.getState().sessionExpired();
     }
     return Promise.reject(error);
   },

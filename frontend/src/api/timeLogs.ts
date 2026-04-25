@@ -28,3 +28,31 @@ export async function getWeeklyTimesheet(userId: number, weekStart: string): Pro
   const res = await client.get('/timesheets/weekly', { params: { userId, weekStart } });
   return res.data.data;
 }
+
+export async function getDailyTimesheet(userId: number, date: string): Promise<{
+  userId: number;
+  date: string;
+  entries: TimeLogDto[];
+}> {
+  const res = await client.get('/timesheets/daily', { params: { userId, date } });
+  return res.data.data;
+}
+
+export async function getTimeByProject(startDate: string, endDate: string, projectId?: number): Promise<{ projectId: number; totalHours: number }[]> {
+  const params: Record<string, string | number> = { startDate, endDate };
+  if (projectId) params.projectId = projectId;
+  return apiGet('/reports/time-by-project', params);
+}
+
+export async function getTimeByUser(startDate: string, endDate: string, projectId?: number, userId?: number): Promise<{ userId: number; totalHours: number }[]> {
+  const params: Record<string, string | number> = { startDate, endDate };
+  if (projectId) params.projectId = projectId;
+  if (userId) params.userId = userId;
+  return apiGet('/reports/time-by-user', params);
+}
+
+export async function getTimeByIssue(startDate: string, endDate: string, projectId: number, assigneeId?: number): Promise<{ issueId: number; totalHours: number }[]> {
+  const params: Record<string, string | number> = { startDate, endDate, projectId };
+  if (assigneeId) params.assigneeId = assigneeId;
+  return apiGet('/reports/time-by-issue', params);
+}
