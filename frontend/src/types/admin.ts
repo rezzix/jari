@@ -1,0 +1,56 @@
+export interface IssueTypeDto {
+  id: number;
+  name: string;
+}
+
+export type IssueStatusCategory = 'TODO' | 'IN_PROGRESS' | 'DONE';
+
+export interface IssueStatusDto {
+  id: number;
+  name: string;
+  category: IssueStatusCategory;
+  isDefault: boolean;
+}
+
+export interface AuditLogDto {
+  id: number;
+  entityType: string;
+  entityId: number;
+  action: string;
+  oldValue: string | null;
+  newValue: string | null;
+  performedBy: number;
+  createdAt: string;
+}
+
+export interface OrganizationUpdateRequest {
+  name: string;
+  address?: string;
+}
+
+export interface CreateUserRequest {
+  username: string;
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+}
+
+export interface AdminUpdateUserRequest {
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  role?: string;
+  active?: boolean;
+}
+
+export interface CreateIssueTypeRequest {
+  name: string;
+}
+
+export interface CreateIssueStatusRequest {
+  name: string;
+  category: IssueStatusCategory;
+  isDefault: boolean;
+}

@@ -1,0 +1,40 @@
+package com.jari.project;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import java.util.List;
+
+public record ProjectDto(
+        Long id, String name, String key, String description,
+        Long programId, String programName,
+        Long managerId, String managerName,
+        String createdAt, String updatedAt
+) {
+    public record CreateRequest(
+            @NotBlank @Size(min = 1, max = 255) String name,
+            @NotBlank @Size(min = 1, max = 10) String key,
+            String description,
+            @NotNull Long programId,
+            @NotNull Long managerId,
+            List<Long> memberIds
+    ) {}
+
+    public record UpdateRequest(
+            String name, String description, Long managerId
+    ) {}
+
+    public record BoardColumnDto(Long id, Long statusId, String name, int position, long issueCount) {}
+
+    public record BoardConfigDto(Long projectId, List<BoardColumnDto> columns) {}
+
+    public record BoardUpdateRequest(List<ColumnEntry> columns) {
+        public record ColumnEntry(Long statusId, int position) {}
+    }
+
+    public record LabelDto(Long id, String name, String color) {}
+
+    public record LabelCreateRequest(@NotBlank String name, @NotBlank String color) {}
+
+    public record MemberDto(Long id, Long userId, String username, String fullName) {}
+}
