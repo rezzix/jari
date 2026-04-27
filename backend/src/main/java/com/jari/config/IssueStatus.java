@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 @Table(name = "issue_status")
 public class IssueStatus {
 
-    public enum Category { TODO, IN_PROGRESS, DONE }
+    public enum Category { TODO, IN_PROGRESS, DONE, CLOSED }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

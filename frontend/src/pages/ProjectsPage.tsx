@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { ProjectDto, ProgramDto, UserDto } from '@/types';
-import { listProjects, createProject } from '@/api/projects';
+import { listProjects, createProject, toggleProjectFavorite } from '@/api/projects';
 import { listPrograms } from '@/api/admin';
+import Modal from '@/components/common/Modal';
+import Field from '@/components/common/Field';
 import { listAllUsers } from '@/api/users';
 import { useAuth } from '@/hooks/useAuth';
-import { formatDate } from '@/utils/format';
+import { formatDate, stageBadge } from '@/utils/format';
 import Spinner from '@/components/common/Spinner';
 
 export default function ProjectsPage() {
@@ -29,6 +31,20 @@ export default function ProjectsPage() {
 
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
 
+  const toggleFavorite = async (project: ProjectDto) => {
+    const newFav = !project.favorite;
+    setProjects((prev) => prev.map((p) => p.id === project.id ? { ...p, favorite: newFav } : p));
+    try {
+      const updated = await toggleProjectFavorite(project.id);
+      setProjects((prev) => prev.map((p) => p.id === project.id ? { ...p, favorite: updated.favorite } : p));
+    } catch {
+      setProjects((prev) => prev.map((p) => p.id === project.id ? { ...p, favorite: project.favorite } : p));
+    }
+  };
+
+  const favorites = projects.filter((p) => p.favorite);
+  const others = projects.filter((p) => !p.favorite);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -43,41 +59,97 @@ export default function ProjectsPage() {
       {loading ? (
         <div className="flex items-center justify-center h-32"><Spinner className="h-6 w-6 text-primary-600" /></div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">Key</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">Name</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">Program</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">Manager</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">Created</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {projects.map((p) => (
-                <tr
-                  key={p.id}
-                  className="hover:bg-gray-50 cursor-pointer"
-                  onClick={() => navigate(`/projects/${p.id}`)}
-                >
-                  <td className="px-4 py-3 font-mono text-xs text-primary-600">{p.key}</td>
-                  <td className="px-4 py-3 font-medium text-gray-900">{p.name}</td>
-                  <td className="px-4 py-3 text-gray-500">{p.programName ?? '—'}</td>
-                  <td className="px-4 py-3 text-gray-500">{p.managerName}</td>
-                  <td className="px-4 py-3 text-gray-500">{formatDate(p.createdAt)}</td>
+        <>
+          {favorites.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-gray-500 mb-3">Favorites</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {favorites.map((p) => (
+                  <div
+                    key={p.id}
+                    className="bg-white rounded-xl border border-primary-200 p-5 hover:shadow-md transition-shadow cursor-pointer relative group"
+                    onClick={() => navigate(`/projects/${p.id}`)}
+                  >
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleFavorite(p); }}
+                      className="absolute top-3 right-3 text-yellow-500 hover:text-yellow-600"
+                      title="Remove from favorites"
+                    >
+                      <StarIcon filled />
+                    </button>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-mono text-xs text-primary-600 bg-primary-50 px-1.5 py-0.5 rounded">{p.key}</span>
+                      {p.stage && <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${stageBadge(p.stage)}`}>{p.stage}</span>}
+                    </div>
+                    <h4 className="text-base font-semibold text-gray-900 mb-1">{p.name}</h4>
+                    {p.description && <p className="text-xs text-gray-500 line-clamp-2 mb-3">{p.description}</p>}
+                    <div className="flex items-center gap-4 text-xs text-gray-400">
+                      <span>{p.programName ?? '—'}</span>
+                      <span>{p.managerName}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="w-8 px-4 py-3"></th>
+                  <th className="text-left px-2 py-3 font-medium text-gray-500">Key</th>
+                  <th className="text-left px-2 py-3 font-medium text-gray-500">Name</th>
+                  <th className="text-left px-2 py-3 font-medium text-gray-500">Program</th>
+                  <th className="text-left px-2 py-3 font-medium text-gray-500">Manager</th>
+                  <th className="text-left px-2 py-3 font-medium text-gray-500">Created</th>
                 </tr>
-              ))}
-              {projects.length === 0 && (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500">No projects found.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {others.map((p) => (
+                  <tr
+                    key={p.id}
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={() => navigate(`/projects/${p.id}`)}
+                  >
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleFavorite(p); }}
+                        className="text-gray-300 hover:text-yellow-500"
+                        title="Add to favorites"
+                      >
+                        <StarIcon />
+                      </button>
+                    </td>
+                    <td className="px-2 py-3 font-mono text-xs text-primary-600">{p.key}</td>
+                    <td className="px-2 py-3 font-medium text-gray-900">{p.name}</td>
+                    <td className="px-2 py-3 text-gray-500">{p.programName ?? '—'}</td>
+                    <td className="px-2 py-3 text-gray-500">{p.managerName}</td>
+                    <td className="px-2 py-3 text-gray-500">{formatDate(p.createdAt)}</td>
+                  </tr>
+                ))}
+                {others.length === 0 && favorites.length === 0 && (
+                  <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500">No projects found.</td></tr>
+                )}
+                {others.length === 0 && favorites.length > 0 && (
+                  <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400 text-xs">All projects are favorites</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {showCreate && <CreateProjectModal onClose={() => { setShowCreate(false); fetchProjects(); }} />}
     </div>
+  );
+}
+
+function StarIcon({ filled, className }: { filled?: boolean; className?: string }) {
+  return (
+    <svg className={className ?? 'w-5 h-5'} fill={filled ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.682 20.557a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+    </svg>
   );
 }
 
@@ -177,37 +249,5 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
         </div>
       </form>
     </Modal>
-  );
-}
-
-function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
-        </div>
-        <div className="p-6">{children}</div>
-      </div>
-    </div>
-  );
-}
-
-function Field({ label, value, onChange, type = 'text', required, textarea, maxLength, className }: {
-  label: string; value: string; onChange: (v: string) => void; type?: string; required?: boolean; textarea?: boolean; maxLength?: number; className?: string;
-}) {
-  const id = label.replace(/\s+/g, '-').toLowerCase();
-  return (
-    <div className={className}>
-      <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-      {textarea ? (
-        <textarea id={id} value={value} onChange={(e) => onChange(e.target.value)} rows={3} required={required} maxLength={maxLength} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
-      ) : (
-        <input id={id} type={type} value={value} onChange={(e) => onChange(e.target.value)} required={required} maxLength={maxLength} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
-      )}
-    </div>
   );
 }

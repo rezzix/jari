@@ -15,3 +15,4 @@ MERGE INTO issue_type (id, name) KEY(id) VALUES (6, 'Testing');
 MERGE INTO issue_status (id, name, category, is_default) KEY(id) VALUES (1, 'To Do', 'TODO', TRUE);
 MERGE INTO issue_status (id, name, category, is_default) KEY(id) VALUES (2, 'In Progress', 'IN_PROGRESS', FALSE);
 MERGE INTO issue_status (id, name, category, is_default) KEY(id) VALUES (3, 'Done', 'DONE', FALSE);
+MERGE INTO issue_status (id, name, category, is_default) KEY(id) VALUES (4, 'Closed', 'CLOSED', FALSE);

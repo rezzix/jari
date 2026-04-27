@@ -7,4 +7,5 @@ export type { OrganizationConfig } from './organization';
 export type { SprintDto, CreateSprintRequest, UpdateSprintRequest } from './sprint';
 export type { TimeLogDto, CreateTimeLogRequest, UpdateTimeLogRequest } from './timeLog';
 export type { WikiPageDto, WikiTreeItem, CreateWikiPageRequest, UpdateWikiPageRequest, WikiSearchHit } from './wiki';
+export type { RaidItemDto, CreateRaidItemRequest, UpdateRaidItemRequest, EvmMetrics, PortfolioSummary, UserRateDto } from './pmo';
 export type { IssueTypeDto, IssueStatusDto, IssueStatusCategory, AuditLogDto, OrganizationUpdateRequest, CreateUserRequest, AdminUpdateUserRequest, CreateIssueTypeRequest, CreateIssueStatusRequest } from './admin';

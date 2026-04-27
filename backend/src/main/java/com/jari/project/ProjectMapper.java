@@ -12,8 +12,16 @@ public interface ProjectMapper {
     @Mapping(target = "programName", source = "program.name")
     @Mapping(target = "managerId", source = "manager.id")
     @Mapping(target = "managerName", source = "manager.firstName")
+    @Mapping(target = "stage", source = "stage")
+    @Mapping(target = "strategicScore", source = "strategicScore")
+    @Mapping(target = "plannedValue", source = "plannedValue")
+    @Mapping(target = "budget", source = "budget")
+    @Mapping(target = "budgetSpent", source = "budgetSpent")
+    @Mapping(target = "targetStartDate", source = "targetStartDate", dateFormat = "yyyy-MM-dd")
+    @Mapping(target = "targetEndDate", source = "targetEndDate", dateFormat = "yyyy-MM-dd")
     @Mapping(target = "createdAt", source = "createdAt", dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'")
     @Mapping(target = "updatedAt", source = "updatedAt", dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'")
+    @Mapping(target = "favorite", ignore = true)
     ProjectDto toDto(Project project);
 
     List<ProjectDto> toDtoList(List<Project> projects);

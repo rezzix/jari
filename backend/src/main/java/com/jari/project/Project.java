@@ -6,7 +6,9 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "project")
@@ -33,6 +35,28 @@ public class Project {
     @JoinColumn(name = "manager_id", nullable = false)
     private User manager;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Stage stage = Stage.INITIATION;
+
+    @Column(name = "strategic_score")
+    private Integer strategicScore;
+
+    @Column(name = "planned_value", precision = 12, scale = 2)
+    private BigDecimal plannedValue;
+
+    @Column(name = "budget", precision = 12, scale = 2)
+    private BigDecimal budget;
+
+    @Column(name = "budget_spent", precision = 12, scale = 2)
+    private BigDecimal budgetSpent;
+
+    @Column(name = "target_start_date")
+    private LocalDate targetStartDate;
+
+    @Column(name = "target_end_date")
+    private LocalDate targetEndDate;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -54,6 +78,22 @@ public class Project {
     public void setProgram(Program program) { this.program = program; }
     public User getManager() { return manager; }
     public void setManager(User manager) { this.manager = manager; }
+    public Stage getStage() { return stage; }
+    public void setStage(Stage stage) { this.stage = stage; }
+    public Integer getStrategicScore() { return strategicScore; }
+    public void setStrategicScore(Integer strategicScore) { this.strategicScore = strategicScore; }
+    public BigDecimal getPlannedValue() { return plannedValue; }
+    public void setPlannedValue(BigDecimal plannedValue) { this.plannedValue = plannedValue; }
+    public BigDecimal getBudget() { return budget; }
+    public void setBudget(BigDecimal budget) { this.budget = budget; }
+    public BigDecimal getBudgetSpent() { return budgetSpent; }
+    public void setBudgetSpent(BigDecimal budgetSpent) { this.budgetSpent = budgetSpent; }
+    public LocalDate getTargetStartDate() { return targetStartDate; }
+    public void setTargetStartDate(LocalDate targetStartDate) { this.targetStartDate = targetStartDate; }
+    public LocalDate getTargetEndDate() { return targetEndDate; }
+    public void setTargetEndDate(LocalDate targetEndDate) { this.targetEndDate = targetEndDate; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
+
+    public enum Stage { INITIATION, PLANNING, EXECUTION, CLOSING }
 }

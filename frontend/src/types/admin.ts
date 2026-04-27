@@ -3,7 +3,7 @@ export interface IssueTypeDto {
   name: string;
 }
 
-export type IssueStatusCategory = 'TODO' | 'IN_PROGRESS' | 'DONE';
+export type IssueStatusCategory = 'TODO' | 'IN_PROGRESS' | 'DONE' | 'CLOSED';
 
 export interface IssueStatusDto {
   id: number;

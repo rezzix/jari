@@ -32,9 +32,71 @@ export function priorityColor(priority: IssuePriority): string {
 
 export function statusColor(statusName: string): string {
   const s = statusName.toLowerCase();
+  if (s.includes('closed')) return 'bg-emerald-100 text-emerald-700';
   if (s.includes('done') || s.includes('complete')) return 'bg-green-100 text-green-700';
   if (s.includes('progress') || s.includes('active')) return 'bg-blue-100 text-blue-700';
   if (s.includes('todo') || s.includes('open')) return 'bg-gray-100 text-gray-700';
   if (s.includes('review')) return 'bg-purple-100 text-purple-700';
   return 'bg-gray-100 text-gray-700';
+}
+
+// PMO / RAID helpers
+
+export function riskColor(score: number): string {
+  if (score >= 16) return 'bg-red-100 text-red-800';
+  if (score >= 10) return 'bg-orange-100 text-orange-800';
+  if (score >= 5) return 'bg-yellow-100 text-yellow-800';
+  return 'bg-green-100 text-green-800';
+}
+
+export function riskLabel(score: number): string {
+  if (score >= 16) return 'Critical';
+  if (score >= 10) return 'High';
+  if (score >= 5) return 'Medium';
+  return 'Low';
+}
+
+export function stageBadge(stage: string | null): string {
+  switch (stage) {
+    case 'INITIATION': return 'bg-blue-100 text-blue-800';
+    case 'PLANNING': return 'bg-purple-100 text-purple-800';
+    case 'EXECUTION': return 'bg-amber-100 text-amber-800';
+    case 'CLOSING': return 'bg-green-100 text-green-800';
+    default: return 'bg-gray-100 text-gray-800';
+  }
+}
+
+export function stageLabel(stage: string): string {
+  return stage.charAt(0) + stage.slice(1).toLowerCase();
+}
+
+export function raidTypeColor(type: string): string {
+  switch (type) {
+    case 'RISK': return 'bg-red-50 text-red-700 border-red-200';
+    case 'ASSUMPTION': return 'bg-blue-50 text-blue-700 border-blue-200';
+    case 'ISSUE': return 'bg-orange-50 text-orange-700 border-orange-200';
+    case 'DEPENDENCY': return 'bg-purple-50 text-purple-700 border-purple-200';
+    default: return 'bg-gray-50 text-gray-700 border-gray-200';
+  }
+}
+
+export function raidStatusBadge(status: string): string {
+  switch (status) {
+    case 'OPEN': return 'bg-yellow-100 text-yellow-800';
+    case 'MITIGATING': return 'bg-blue-100 text-blue-800';
+    case 'RESOLVED': return 'bg-green-100 text-green-800';
+    case 'CLOSED': return 'bg-gray-100 text-gray-600';
+    default: return 'bg-gray-100 text-gray-600';
+  }
+}
+
+export function eviColor(value: number): string {
+  if (value >= 1) return 'text-green-600';
+  if (value >= 0.9) return 'text-yellow-600';
+  return 'text-red-600';
+}
+
+export function formatCurrency(value: number | null | undefined): string {
+  if (value == null) return '—';
+  return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }

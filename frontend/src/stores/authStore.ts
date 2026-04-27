@@ -15,7 +15,7 @@ interface AuthState {
   sessionExpired: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isLoading: true,
   error: null,
@@ -43,7 +43,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   checkSession: async () => {
-    set({ isLoading: true });
+    // Only show loading spinner on initial check, not on re-validation
+    const wasAuthenticated = get().isAuthenticated;
+    if (!wasAuthenticated) set({ isLoading: true });
     try {
       const user = await authApi.me();
       set({ user, isAuthenticated: true, isLoading: false });

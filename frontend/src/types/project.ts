@@ -7,6 +7,14 @@ export interface ProjectDto {
   programName: string | null;
   managerId: number;
   managerName: string;
+  stage: string | null;
+  strategicScore: number | null;
+  plannedValue: string | null;
+  budget: string | null;
+  budgetSpent: string | null;
+  targetStartDate: string | null;
+  targetEndDate: string | null;
+  favorite: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -24,6 +32,13 @@ export interface UpdateProjectRequest {
   name?: string;
   description?: string;
   managerId?: number;
+  stage?: string;
+  strategicScore?: number | null;
+  plannedValue?: string | null;
+  budget?: string | null;
+  budgetSpent?: string | null;
+  targetStartDate?: string | null;
+  targetEndDate?: string | null;
 }
 
 export interface MemberDto {

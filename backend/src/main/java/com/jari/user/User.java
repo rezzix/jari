@@ -10,7 +10,7 @@ import java.time.Instant;
 @Table(name = "\"user\"")
 public class User {
 
-    public enum Role { ADMIN, MANAGER, CONTRIBUTOR }
+    public enum Role { ADMIN, MANAGER, CONTRIBUTOR, EXECUTIVE }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

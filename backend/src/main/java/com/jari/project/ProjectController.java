@@ -14,6 +14,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -38,25 +40,44 @@ public class ProjectController {
             @AuthenticationPrincipal UserDetails currentUser) {
 
         Long userId = Long.parseLong(currentUser.getUsername());
-        boolean isAdminOrManager = currentUser.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_MANAGER"));
+        boolean isAdminOrManagerOrExecutive = currentUser.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_MANAGER") || a.getAuthority().equals("ROLE_EXECUTIVE"));
 
         Page<Project> result;
-        if (isAdminOrManager) {
+        if (isAdminOrManagerOrExecutive) {
             result = projectService.search(search, programId, managerId, page, size, sort);
         } else {
             result = projectService.searchByMember(userId, page, size);
         }
 
+        Set<Long> favoriteIds = projectService.getFavoriteProjectIds(userId);
+        List<ProjectDto> dtos = projectMapper.toDtoList(result.getContent()).stream()
+                .map(dto -> new ProjectDto(dto.id(), dto.name(), dto.key(), dto.description(),
+                        dto.programId(), dto.programName(), dto.managerId(), dto.managerName(),
+                        dto.stage(), dto.strategicScore(), dto.plannedValue(), dto.budget(), dto.budgetSpent(),
+                        dto.targetStartDate(), dto.targetEndDate(),
+                        favoriteIds.contains(dto.id()),
+                        dto.createdAt(), dto.updatedAt()))
+                .collect(Collectors.toList());
+
         return ResponseEntity.ok(PaginatedResponse.of(
-                projectMapper.toDtoList(result.getContent()),
+                dtos,
                 new PaginationInfo(page, size, result.getTotalElements(), result.getTotalPages())
         ));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<ProjectDto>> get(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.of(projectMapper.toDto(projectService.getById(id))));
+    public ResponseEntity<ApiResponse<ProjectDto>> get(@PathVariable Long id, @AuthenticationPrincipal UserDetails currentUser) {
+        Long userId = Long.parseLong(currentUser.getUsername());
+        ProjectDto dto = projectMapper.toDto(projectService.getById(id));
+        Set<Long> favoriteIds = projectService.getFavoriteProjectIds(userId);
+        ProjectDto enriched = new ProjectDto(dto.id(), dto.name(), dto.key(), dto.description(),
+                dto.programId(), dto.programName(), dto.managerId(), dto.managerName(),
+                dto.stage(), dto.strategicScore(), dto.plannedValue(), dto.budget(), dto.budgetSpent(),
+                dto.targetStartDate(), dto.targetEndDate(),
+                favoriteIds.contains(dto.id()),
+                dto.createdAt(), dto.updatedAt());
+        return ResponseEntity.ok(ApiResponse.of(enriched));
     }
 
     @PostMapping
@@ -78,6 +99,15 @@ public class ProjectController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         projectService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // Favorites
+    @PostMapping("/{id}/favorite")
+    public ResponseEntity<ApiResponse<ProjectDto>> toggleFavorite(
+            @PathVariable Long id, @AuthenticationPrincipal UserDetails currentUser) {
+        Long userId = Long.parseLong(currentUser.getUsername());
+        boolean isFavorite = projectService.toggleFavorite(id, userId);
+        return get(id, currentUser);
     }
 
     // Members

@@ -60,3 +60,8 @@ export async function getBoard(projectId: number): Promise<BoardConfigDto> {
 export async function updateBoard(projectId: number, request: BoardUpdateRequest): Promise<BoardConfigDto> {
   return apiPut<BoardConfigDto>(`/projects/${projectId}/board`, request);
 }
+
+// Favorites
+export async function toggleProjectFavorite(projectId: number): Promise<ProjectDto> {
+  return apiPost<ProjectDto>(`/projects/${projectId}/favorite`, {});
+}

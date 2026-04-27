@@ -9,6 +9,10 @@ public record ProjectDto(
         Long id, String name, String key, String description,
         Long programId, String programName,
         Long managerId, String managerName,
+        String stage, Integer strategicScore,
+        String plannedValue, String budget, String budgetSpent,
+        String targetStartDate, String targetEndDate,
+        Boolean favorite,
         String createdAt, String updatedAt
 ) {
     public record CreateRequest(
@@ -21,7 +25,10 @@ public record ProjectDto(
     ) {}
 
     public record UpdateRequest(
-            String name, String description, Long managerId
+            String name, String description, Long managerId,
+            String stage, Integer strategicScore,
+            String plannedValue, String budget, String budgetSpent,
+            String targetStartDate, String targetEndDate
     ) {}
 
     public record BoardColumnDto(Long id, Long statusId, String name, int position, long issueCount) {}

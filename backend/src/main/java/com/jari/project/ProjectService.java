@@ -16,7 +16,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class ProjectService {
@@ -29,11 +32,13 @@ public class ProjectService {
     private final UserRepository userRepository;
     private final IssueStatusRepository statusRepository;
     private final IssueRepository issueRepository;
+    private final ProjectFavoriteRepository favoriteRepository;
 
     public ProjectService(ProjectRepository projectRepository, ProjectMemberRepository memberRepository,
                           LabelRepository labelRepository, BoardColumnRepository boardColumnRepository,
                           ProgramRepository programRepository, UserRepository userRepository,
-                          IssueStatusRepository statusRepository, IssueRepository issueRepository) {
+                          IssueStatusRepository statusRepository, IssueRepository issueRepository,
+                          ProjectFavoriteRepository favoriteRepository) {
         this.projectRepository = projectRepository;
         this.memberRepository = memberRepository;
         this.labelRepository = labelRepository;
@@ -42,6 +47,7 @@ public class ProjectService {
         this.userRepository = userRepository;
         this.statusRepository = statusRepository;
         this.issueRepository = issueRepository;
+        this.favoriteRepository = favoriteRepository;
     }
 
     @Transactional(readOnly = true)
@@ -114,7 +120,34 @@ public class ProjectService {
                     .orElseThrow(() -> new EntityNotFoundException("User", request.managerId()));
             project.setManager(manager);
         }
+        if (request.stage() != null) project.setStage(Project.Stage.valueOf(request.stage()));
+        if (request.strategicScore() != null) project.setStrategicScore(request.strategicScore());
+        if (request.plannedValue() != null) project.setPlannedValue(new BigDecimal(request.plannedValue()));
+        if (request.budget() != null) project.setBudget(new BigDecimal(request.budget()));
+        if (request.budgetSpent() != null) project.setBudgetSpent(new BigDecimal(request.budgetSpent()));
+        if (request.targetStartDate() != null) project.setTargetStartDate(LocalDate.parse(request.targetStartDate()));
+        if (request.targetEndDate() != null) project.setTargetEndDate(LocalDate.parse(request.targetEndDate()));
         return projectRepository.save(project);
+    }
+
+    // Favorites
+    @Transactional(readOnly = true)
+    public Set<Long> getFavoriteProjectIds(Long userId) {
+        return favoriteRepository.findProjectIdsByUserId(userId);
+    }
+
+    @Transactional
+    public boolean toggleFavorite(Long projectId, Long userId) {
+        getById(projectId); // ensure project exists
+        if (favoriteRepository.existsByUserIdAndProjectId(userId, projectId)) {
+            favoriteRepository.deleteByUserIdAndProjectId(userId, projectId);
+            return false;
+        } else {
+            User user = userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User", userId));
+            Project project = getById(projectId);
+            favoriteRepository.save(new ProjectFavorite(user, project));
+            return true;
+        }
     }
 
     @Transactional

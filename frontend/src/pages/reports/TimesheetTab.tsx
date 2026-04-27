@@ -1,9 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAuthStore } from '@/stores/authStore';
 import { getWeeklyTimesheet, getDailyTimesheet, deleteTimeLog } from '@/api/timeLogs';
 import { listAllUsers } from '@/api/users';
-import type { TimeLogDto, UserDto } from '@/types';
-import { formatDate } from '@/utils/format';
+import type { UserDto, TimeLogDto } from '@/types';
 import Spinner from '@/components/common/Spinner';
 
 function getWeekStart(date: Date): string {
@@ -27,20 +25,19 @@ function getWeekDays(weekStart: string): string[] {
 
 const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-export default function TeamTimesheetPage() {
-  const currentUser = useAuthStore((s) => s.user);
+export default function TimesheetTab() {
   const [users, setUsers] = useState<UserDto[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [weekStart, setWeekStart] = useState(getWeekStart(new Date()));
   const [weekData, setWeekData] = useState<Record<string, TimeLogDto[]>>({});
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
   const [dayEntries, setDayEntries] = useState<TimeLogDto[]>([]);
 
   useEffect(() => {
     listAllUsers({ active: 'true' }).then((list) => {
       setUsers(list);
-      if (list.length > 0 && !selectedUserId) setSelectedUserId(list[0].id);
+      if (list.length > 0) setSelectedUserId(list[0].id);
     });
   }, []);
 
@@ -85,16 +82,9 @@ export default function TeamTimesheetPage() {
   }, 0);
 
   const selectedUser = users.find((u) => u.id === selectedUserId);
-  const isManager = currentUser?.role === 'ADMIN' || currentUser?.role === 'MANAGER';
-
-  if (!isManager) {
-    return <div className="text-center text-gray-500 py-8">Access restricted to managers and admins.</div>;
-  }
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Team Timesheet</h2>
-
+    <div className="space-y-4">
       <div className="flex items-center gap-4 flex-wrap">
         <select
           value={selectedUserId ?? ''}

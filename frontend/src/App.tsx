@@ -1,21 +1,23 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import AuthGuard from '@/components/guards/AuthGuard';
 import AdminGuard from '@/components/guards/AdminGuard';
+import RoleGuard from '@/components/guards/RoleGuard';
 import GuestGuard from '@/components/guards/GuestGuard';
 import AppLayout from '@/components/layout/AppLayout';
 import LoadingScreen from '@/components/common/LoadingScreen';
 import LoginPage from '@/pages/LoginPage';
 import DashboardPage from '@/pages/DashboardPage';
 import ProfilePage from '@/pages/ProfilePage';
-import AdminPage from '@/pages/AdminPage';
+import AdminPage from '@/pages/admin';
 import ProjectsPage from '@/pages/ProjectsPage';
-import ProjectDetailPage from '@/pages/ProjectDetailPage';
+import ProjectDetailPage from '@/pages/project-detail';
 import IssueDetailPage from '@/pages/IssueDetailPage';
 import MyTimePage from '@/pages/MyTimePage';
-import TeamTimesheetPage from '@/pages/TeamTimesheetPage';
-import TimeReportsPage from '@/pages/TimeReportsPage';
+import TimesheetsPage from '@/pages/TimesheetsPage';
+import TimeReportsPage from '@/pages/reports';
+import PmoDashboardPage from '@/pages/PmoDashboardPage';
 
 export default function App() {
   const checkSession = useAuthStore((s) => s.checkSession);
@@ -23,6 +25,14 @@ export default function App() {
 
   useEffect(() => {
     checkSession();
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        checkSession();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [checkSession]);
 
   if (isLoading) {
@@ -52,11 +62,13 @@ export default function App() {
           <Route path="/projects/:id" element={<ProjectDetailPage />} />
           <Route path="/projects/:projectId/issues/:issueId" element={<IssueDetailPage />} />
           <Route path="/my-time" element={<MyTimePage />} />
-          <Route path="/timesheets" element={<TeamTimesheetPage />} />
-          <Route path="/reports" element={<TimeReportsPage />} />
+          <Route path="/timesheets" element={<RoleGuard roles={['ADMIN', 'MANAGER']}><TimesheetsPage /></RoleGuard>} />
+          <Route path="/reports" element={<RoleGuard roles={['ADMIN', 'MANAGER', 'EXECUTIVE']}><TimeReportsPage /></RoleGuard>} />
+          <Route path="/pmo" element={<RoleGuard roles={['ADMIN', 'MANAGER', 'EXECUTIVE']}><PmoDashboardPage /></RoleGuard>} />
           <Route path="/admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
