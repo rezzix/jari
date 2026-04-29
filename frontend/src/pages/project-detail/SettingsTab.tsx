@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ProjectDto } from '@/types';
 import { updateProject } from '@/api/projects';
+import { extractValidationErrors } from '@/api/client';
 import EvmCard from './EvmCard';
 
 export default function SettingsTab({ project, onUpdate }: { project: ProjectDto; onUpdate: (p: ProjectDto) => void }) {
@@ -14,9 +15,32 @@ export default function SettingsTab({ project, onUpdate }: { project: ProjectDto
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const validate = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (strategicScore && (Number(strategicScore) < 1 || Number(strategicScore) > 10)) {
+      errors.strategicScore = 'Strategic score must be between 1 and 10';
+    }
+    if (plannedValue && isNaN(Number(plannedValue))) {
+      errors.plannedValue = 'Planned value must be a number';
+    }
+    if (budget && isNaN(Number(budget))) {
+      errors.budget = 'Budget must be a number';
+    }
+    if (budgetSpent && isNaN(Number(budgetSpent))) {
+      errors.budgetSpent = 'Budget spent must be a number';
+    }
+    if (targetStartDate && targetEndDate && targetEndDate < targetStartDate) {
+      errors.targetEndDate = 'End date must be after start date';
+    }
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
     setSaving(true); setError(null); setSuccess(false);
     try {
       const updated = await updateProject(project.id, {
@@ -27,8 +51,18 @@ export default function SettingsTab({ project, onUpdate }: { project: ProjectDto
       });
       onUpdate(updated);
       setSuccess(true);
-    } catch { setError('Failed to save project settings.'); } finally { setSaving(false); }
+    } catch (err) {
+      const serverErrors = extractValidationErrors(err);
+      if (Object.keys(serverErrors).length > 0) {
+        setFieldErrors(serverErrors);
+      } else {
+        setError('Failed to save project settings.');
+      }
+    } finally { setSaving(false); }
   };
+
+  const inputClass = (field: string) =>
+    `w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 ${fieldErrors[field] ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-primary-500'}`;
 
   return (
     <div className="space-y-6">
@@ -51,7 +85,8 @@ export default function SettingsTab({ project, onUpdate }: { project: ProjectDto
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Strategic Score (1-10)</label>
-            <input type="number" min="1" max="10" value={strategicScore} onChange={e => setStrategicScore(e.target.value)} placeholder="e.g. 7" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            <input type="number" min="1" max="10" value={strategicScore} onChange={e => setStrategicScore(e.target.value)} placeholder="e.g. 7" className={inputClass('strategicScore')} />
+            {fieldErrors.strategicScore && <p className="mt-1 text-sm text-red-600">{fieldErrors.strategicScore}</p>}
           </div>
         </div>
 
@@ -59,26 +94,30 @@ export default function SettingsTab({ project, onUpdate }: { project: ProjectDto
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Planned Value (PV Baseline)</label>
-            <input type="text" value={plannedValue} onChange={e => setPlannedValue(e.target.value)} placeholder="e.g. 150000" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            <input type="text" value={plannedValue} onChange={e => setPlannedValue(e.target.value)} placeholder="e.g. 150000" className={inputClass('plannedValue')} />
+            {fieldErrors.plannedValue && <p className="mt-1 text-sm text-red-600">{fieldErrors.plannedValue}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Total Budget</label>
-            <input type="text" value={budget} onChange={e => setBudget(e.target.value)} placeholder="e.g. 150000" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            <input type="text" value={budget} onChange={e => setBudget(e.target.value)} placeholder="e.g. 150000" className={inputClass('budget')} />
+            {fieldErrors.budget && <p className="mt-1 text-sm text-red-600">{fieldErrors.budget}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Budget Spent (Non-Labor)</label>
-            <input type="text" value={budgetSpent} onChange={e => setBudgetSpent(e.target.value)} placeholder="e.g. 12000" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            <input type="text" value={budgetSpent} onChange={e => setBudgetSpent(e.target.value)} placeholder="e.g. 12000" className={inputClass('budgetSpent')} />
+            {fieldErrors.budgetSpent && <p className="mt-1 text-sm text-red-600">{fieldErrors.budgetSpent}</p>}
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Target Start Date</label>
-            <input type="date" value={targetStartDate} onChange={e => setTargetStartDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            <input type="date" value={targetStartDate} onChange={e => setTargetStartDate(e.target.value)} className={inputClass('targetStartDate')} />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Target End Date</label>
-            <input type="date" value={targetEndDate} onChange={e => setTargetEndDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            <input type="date" value={targetEndDate} onChange={e => setTargetEndDate(e.target.value)} className={inputClass('targetEndDate')} />
+            {fieldErrors.targetEndDate && <p className="mt-1 text-sm text-red-600">{fieldErrors.targetEndDate}</p>}
           </div>
         </div>
 

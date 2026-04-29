@@ -28,7 +28,10 @@ public class FilesystemStorageService implements StorageService {
     @Override
     public String store(byte[] content, String fileName, String contentType) {
         String uniqueName = UUID.randomUUID() + "_" + fileName;
-        Path targetPath = basePath.resolve(uniqueName);
+        Path targetPath = basePath.resolve(uniqueName).normalize();
+        if (!targetPath.startsWith(basePath)) {
+            throw new RuntimeException("Path traversal detected");
+        }
         try {
             Files.write(targetPath, content);
         } catch (IOException e) {
@@ -41,6 +44,9 @@ public class FilesystemStorageService implements StorageService {
     public Resource load(String path) {
         try {
             Path file = basePath.resolve(path).normalize();
+            if (!file.startsWith(basePath)) {
+                throw new RuntimeException("Path traversal detected");
+            }
             Resource resource = new UrlResource(file.toUri());
             if (resource.exists() && resource.isReadable()) {
                 return resource;
@@ -55,6 +61,9 @@ public class FilesystemStorageService implements StorageService {
     public void delete(String path) {
         try {
             Path file = basePath.resolve(path).normalize();
+            if (!file.startsWith(basePath)) {
+                throw new RuntimeException("Path traversal detected");
+            }
             Files.deleteIfExists(file);
         } catch (IOException e) {
             throw new RuntimeException("Failed to delete file: " + path, e);

@@ -3,6 +3,7 @@ package com.jari.timetracking;
 import com.jari.common.dto.ApiResponse;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -22,6 +23,7 @@ public class ReportController {
     }
 
     @GetMapping("/time-by-project")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EXECUTIVE')")
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> timeByProject(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
@@ -50,6 +52,7 @@ public class ReportController {
     }
 
     @GetMapping("/time-by-user")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EXECUTIVE')")
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> timeByUser(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
@@ -77,6 +80,7 @@ public class ReportController {
     }
 
     @GetMapping("/time-by-issue")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EXECUTIVE')")
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> timeByIssue(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,

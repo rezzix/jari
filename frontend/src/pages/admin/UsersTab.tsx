@@ -20,6 +20,7 @@ export default function UsersTab() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editingUser, setEditingUser] = useState<UserDto | null>(null);
+  const [deactivatingId, setDeactivatingId] = useState<number | null>(null);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -72,7 +73,17 @@ export default function UsersTab() {
                     <div className="flex gap-2">
                       <button onClick={() => setEditingUser(u)} className="text-primary-600 hover:text-primary-800 text-xs font-medium">Edit</button>
                       {u.active && (
-                        <button onClick={async () => { await deactivateUser(u.id); fetchUsers(); }} className="text-red-600 hover:text-red-800 text-xs font-medium">Deactivate</button>
+                        <button
+                          onClick={async () => {
+                            setDeactivatingId(u.id);
+                            try { await deactivateUser(u.id); fetchUsers(); } finally { setDeactivatingId(null); }
+                          }}
+                          disabled={deactivatingId === u.id}
+                          className="text-red-600 hover:text-red-800 text-xs font-medium disabled:opacity-50 flex items-center gap-1"
+                        >
+                          {deactivatingId === u.id && <Spinner className="h-3 w-3" />}
+                          Deactivate
+                        </button>
                       )}
                     </div>
                   </td>
@@ -121,7 +132,7 @@ function CreateUserModal({ onClose }: { onClose: () => void }) {
           <Field label="Username" value={username} onChange={setUsername} required />
           <Field label="Email" type="email" value={email} onChange={setEmail} required />
         </div>
-        <Field label="Password" type="password" value={password} onChange={setPassword} required />
+        <Field label="Password" type="password" value={password} onChange={setPassword} required minLength={6} />
         <div className="grid grid-cols-2 gap-4">
           <Field label="First name" value={firstName} onChange={setFirstName} required />
           <Field label="Last name" value={lastName} onChange={setLastName} required />

@@ -4,6 +4,7 @@ import com.jari.common.dto.ApiResponse;
 import com.jari.common.dto.PaginatedResponse;
 import com.jari.common.dto.PaginatedResponse.PaginationInfo;
 import com.jari.common.exception.ForbiddenException;
+import com.jari.security.AuthHelper;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -23,10 +24,12 @@ public class ProjectController {
 
     private final ProjectService projectService;
     private final ProjectMapper projectMapper;
+    private final AuthHelper authHelper;
 
-    public ProjectController(ProjectService projectService, ProjectMapper projectMapper) {
+    public ProjectController(ProjectService projectService, ProjectMapper projectMapper, AuthHelper authHelper) {
         this.projectService = projectService;
         this.projectMapper = projectMapper;
+        this.authHelper = authHelper;
     }
 
     @GetMapping
@@ -39,9 +42,8 @@ public class ProjectController {
             @RequestParam(defaultValue = "createdAt,desc") String sort,
             @AuthenticationPrincipal UserDetails currentUser) {
 
-        Long userId = Long.parseLong(currentUser.getUsername());
-        boolean isAdminOrManagerOrExecutive = currentUser.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_MANAGER") || a.getAuthority().equals("ROLE_EXECUTIVE"));
+        Long userId = authHelper.getCurrentUserId(currentUser);
+        boolean isAdminOrManagerOrExecutive = authHelper.hasAnyRole(currentUser, "ADMIN", "MANAGER", "EXECUTIVE");
 
         Page<Project> result;
         if (isAdminOrManagerOrExecutive) {
@@ -68,7 +70,8 @@ public class ProjectController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ProjectDto>> get(@PathVariable Long id, @AuthenticationPrincipal UserDetails currentUser) {
-        Long userId = Long.parseLong(currentUser.getUsername());
+        authHelper.requireProjectReadAccess(currentUser, id);
+        Long userId = authHelper.getCurrentUserId(currentUser);
         ProjectDto dto = projectMapper.toDto(projectService.getById(id));
         Set<Long> favoriteIds = projectService.getFavoriteProjectIds(userId);
         ProjectDto enriched = new ProjectDto(dto.id(), dto.name(), dto.key(), dto.description(),
@@ -105,14 +108,16 @@ public class ProjectController {
     @PostMapping("/{id}/favorite")
     public ResponseEntity<ApiResponse<ProjectDto>> toggleFavorite(
             @PathVariable Long id, @AuthenticationPrincipal UserDetails currentUser) {
-        Long userId = Long.parseLong(currentUser.getUsername());
+        Long userId = authHelper.getCurrentUserId(currentUser);
         boolean isFavorite = projectService.toggleFavorite(id, userId);
         return get(id, currentUser);
     }
 
     // Members
     @GetMapping("/{id}/members")
-    public ResponseEntity<ApiResponse<List<ProjectDto.MemberDto>>> getMembers(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<List<ProjectDto.MemberDto>>> getMembers(
+            @PathVariable Long id, @AuthenticationPrincipal UserDetails currentUser) {
+        authHelper.requireProjectReadAccess(currentUser, id);
         List<ProjectDto.MemberDto> members = projectService.getMembers(id).stream()
                 .map(projectMapper::toMemberDto).toList();
         return ResponseEntity.ok(ApiResponse.of(members));
@@ -134,7 +139,9 @@ public class ProjectController {
 
     // Labels
     @GetMapping("/{id}/labels")
-    public ResponseEntity<ApiResponse<List<ProjectDto.LabelDto>>> getLabels(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<List<ProjectDto.LabelDto>>> getLabels(
+            @PathVariable Long id, @AuthenticationPrincipal UserDetails currentUser) {
+        authHelper.requireProjectReadAccess(currentUser, id);
         List<ProjectDto.LabelDto> labels = projectService.getLabels(id).stream()
                 .map(l -> new ProjectDto.LabelDto(l.getId(), l.getName(), l.getColor())).toList();
         return ResponseEntity.ok(ApiResponse.of(labels));
@@ -166,7 +173,9 @@ public class ProjectController {
 
     // Board
     @GetMapping("/{id}/board")
-    public ResponseEntity<ApiResponse<ProjectDto.BoardConfigDto>> getBoard(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<ProjectDto.BoardConfigDto>> getBoard(
+            @PathVariable Long id, @AuthenticationPrincipal UserDetails currentUser) {
+        authHelper.requireProjectReadAccess(currentUser, id);
         return ResponseEntity.ok(ApiResponse.of(projectService.getBoardConfig(id)));
     }
 

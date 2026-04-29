@@ -184,6 +184,12 @@ public class IssueService {
         return commentRepository.save(comment);
     }
 
+    @Transactional(readOnly = true)
+    public Comment getComment(Long commentId) {
+        return commentRepository.findById(commentId)
+                .orElseThrow(() -> new EntityNotFoundException("Comment", commentId));
+    }
+
     @Transactional
     public Comment updateComment(Long commentId, IssueDto.CommentDto.UpdateRequest request) {
         Comment comment = commentRepository.findById(commentId)

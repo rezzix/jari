@@ -42,4 +42,18 @@ export async function apiDelete(url: string): Promise<void> {
   await client.delete(url);
 }
 
+export function extractValidationErrors(err: unknown): Record<string, string> {
+  if (axios.isAxiosError(err) && err.response?.status === 422) {
+    const errors = (err.response.data as { errors?: Array<{ field: string; message: string }> }).errors;
+    if (errors) {
+      const result: Record<string, string> = {};
+      for (const e of errors) {
+        result[e.field] = e.message;
+      }
+      return result;
+    }
+  }
+  return {};
+}
+
 export default client;

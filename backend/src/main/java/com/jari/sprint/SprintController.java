@@ -5,12 +5,15 @@ import com.jari.issue.Issue;
 import com.jari.issue.IssueDto;
 import com.jari.issue.IssueMapper;
 import com.jari.issue.IssueRepository;
+import com.jari.security.AuthHelper;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,25 +26,32 @@ public class SprintController {
     private final SprintMapper sprintMapper;
     private final IssueRepository issueRepository;
     private final IssueMapper issueMapper;
+    private final AuthHelper authHelper;
 
     public SprintController(SprintService sprintService, SprintMapper sprintMapper,
-                            IssueRepository issueRepository, IssueMapper issueMapper) {
+                            IssueRepository issueRepository, IssueMapper issueMapper, AuthHelper authHelper) {
         this.sprintService = sprintService;
         this.sprintMapper = sprintMapper;
         this.issueRepository = issueRepository;
         this.issueMapper = issueMapper;
+        this.authHelper = authHelper;
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<SprintDto>>> list(
             @PathVariable Long projectId,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) String status,
+            @AuthenticationPrincipal UserDetails currentUser) {
+        authHelper.requireProjectReadAccess(currentUser, projectId);
         Sprint.SprintStatus statusEnum = status != null ? Sprint.SprintStatus.valueOf(status) : null;
         return ResponseEntity.ok(ApiResponse.of(sprintMapper.toDtoList(sprintService.getByProjectId(projectId, statusEnum))));
     }
 
     @GetMapping("/{sprintId}")
-    public ResponseEntity<ApiResponse<SprintDto>> get(@PathVariable Long projectId, @PathVariable Long sprintId) {
+    public ResponseEntity<ApiResponse<SprintDto>> get(
+            @PathVariable Long projectId, @PathVariable Long sprintId,
+            @AuthenticationPrincipal UserDetails currentUser) {
+        authHelper.requireProjectReadAccess(currentUser, projectId);
         return ResponseEntity.ok(ApiResponse.of(sprintMapper.toDto(sprintService.getById(sprintId))));
     }
 
