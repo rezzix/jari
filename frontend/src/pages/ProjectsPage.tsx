@@ -160,6 +160,12 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
   const [programId, setProgramId] = useState('');
   const [managerId, setManagerId] = useState('');
   const [memberIds, setMemberIds] = useState<number[]>([]);
+  const [stage, setStage] = useState('INITIATION');
+  const [strategicScore, setStrategicScore] = useState('');
+  const [plannedValue, setPlannedValue] = useState('');
+  const [budget, setBudget] = useState('');
+  const [targetStartDate, setTargetStartDate] = useState('');
+  const [targetEndDate, setTargetEndDate] = useState('');
   const [programs, setPrograms] = useState<ProgramDto[]>([]);
   const [users, setUsers] = useState<UserDto[]>([]);
   const [saving, setSaving] = useState(false);
@@ -190,6 +196,12 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
         programId: Number(programId),
         managerId: Number(managerId),
         memberIds: memberIds.length > 0 ? memberIds : undefined,
+        stage: stage || undefined,
+        strategicScore: strategicScore ? Number(strategicScore) : undefined,
+        plannedValue: plannedValue || undefined,
+        budget: budget || undefined,
+        targetStartDate: targetStartDate || undefined,
+        targetEndDate: targetEndDate || undefined,
       });
       navigate(`/projects/${project.id}`);
     } catch {
@@ -227,6 +239,39 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
             <select value={managerId} onChange={(e) => setManagerId(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
               {eligibleManagers.map((u) => <option key={u.id} value={u.id}>{u.firstName} {u.lastName} ({u.username})</option>)}
             </select>
+          </div>
+        </div>
+        <div className="border-t border-gray-200 pt-4">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">PMO Details</h3>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Stage</label>
+              <select value={stage} onChange={(e) => setStage(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <option value="INITIATION">Initiation</option>
+                <option value="PLANNING">Planning</option>
+                <option value="EXECUTION">Execution</option>
+                <option value="CLOSING">Closing</option>
+              </select>
+            </div>
+            <Field label="Strategic Score (1-10)" value={strategicScore} onChange={(v) => setStrategicScore(v.replace(/[^0-9]/g, ''))} />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Planned Value ($)</label>
+              <input type="text" value={plannedValue} onChange={(e) => setPlannedValue(e.target.value)} placeholder="0" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4 mt-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Budget ($)</label>
+              <input type="text" value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="0" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+              <input type="date" value={targetStartDate} onChange={(e) => setTargetStartDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+              <input type="date" value={targetEndDate} onChange={(e) => setTargetEndDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            </div>
           </div>
         </div>
         <div>

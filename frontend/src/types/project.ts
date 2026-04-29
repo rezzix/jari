@@ -26,6 +26,12 @@ export interface CreateProjectRequest {
   programId: number;
   managerId: number;
   memberIds?: number[];
+  stage?: string;
+  strategicScore?: number;
+  plannedValue?: string;
+  budget?: string;
+  targetStartDate?: string;
+  targetEndDate?: string;
 }
 
 export interface UpdateProjectRequest {

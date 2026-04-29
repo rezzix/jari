@@ -21,7 +21,13 @@ public record ProjectDto(
             String description,
             @NotNull Long programId,
             @NotNull Long managerId,
-            List<Long> memberIds
+            List<Long> memberIds,
+            String stage,
+            Integer strategicScore,
+            String plannedValue,
+            String budget,
+            String targetStartDate,
+            String targetEndDate
     ) {}
 
     public record UpdateRequest(

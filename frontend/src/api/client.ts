@@ -8,33 +8,15 @@ const client = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-let sessionExpiredFlag = false;
-
 client.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      if (!sessionExpiredFlag) {
-        sessionExpiredFlag = true;
-        useAuthStore.getState().sessionExpired();
-      }
-      // Return a never-resolving promise so calling code doesn't show error state
-      // before AuthGuard redirects to login
-      return new Promise(() => {});
+      useAuthStore.getState().sessionExpired();
     }
-    sessionExpiredFlag = false;
     return Promise.reject(error);
   },
 );
-
-// Reset the flag when user logs in successfully
-const originalLogin = useAuthStore.getState().login;
-useAuthStore.setState({
-  login: async (username: string, password: string) => {
-    sessionExpiredFlag = false;
-    return originalLogin(username, password);
-  },
-});
 
 export async function apiGet<T>(url: string): Promise<T> {
   const res = await client.get<ApiResponse<T>>(url);
