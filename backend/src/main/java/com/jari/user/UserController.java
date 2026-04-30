@@ -64,7 +64,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}/password")
-    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.username")
+    @PreAuthorize("hasRole('ADMIN') or #id.toString() == authentication.principal.username")
     public ResponseEntity<ApiResponse<Object>> changePassword(
             @PathVariable Long id,
             @Valid @RequestBody UserDto.PasswordChangeRequest request,
