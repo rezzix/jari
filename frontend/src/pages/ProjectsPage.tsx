@@ -6,6 +6,7 @@ import { listPrograms } from '@/api/admin';
 import Modal from '@/components/common/Modal';
 import Field from '@/components/common/Field';
 import { listAllUsers } from '@/api/users';
+import { extractValidationErrors } from '@/api/client';
 import { useAuth } from '@/hooks/useAuth';
 import { formatDate, stageBadge } from '@/utils/format';
 import Spinner from '@/components/common/Spinner';
@@ -170,6 +171,7 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
   const [users, setUsers] = useState<UserDto[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loadError, setLoadError] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -184,8 +186,33 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
     }).catch(() => setLoadError('Failed to load users. You may not have permission.'));
   }, []);
 
+  const validate = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (!/^[A-Z][A-Z0-9]*$/.test(key.toUpperCase())) {
+      errors.key = 'Key must start with a letter and contain only letters and numbers';
+    }
+    if (key.length < 2) {
+      errors.key = 'Key must be at least 2 characters';
+    }
+    if (strategicScore && (Number(strategicScore) < 1 || Number(strategicScore) > 10)) {
+      errors.strategicScore = 'Strategic score must be between 1 and 10';
+    }
+    if (plannedValue && isNaN(Number(plannedValue))) {
+      errors.plannedValue = 'Planned value must be a number';
+    }
+    if (budget && isNaN(Number(budget))) {
+      errors.budget = 'Budget must be a number';
+    }
+    if (targetStartDate && targetEndDate && targetEndDate < targetStartDate) {
+      errors.targetEndDate = 'End date must be after start date';
+    }
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
     setSaving(true);
     setError(null);
     try {
@@ -204,8 +231,13 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
         targetEndDate: targetEndDate || undefined,
       });
       navigate(`/projects/${project.id}`);
-    } catch {
-      setError('Failed to create project. Check the details and try again.');
+    } catch (err) {
+      const serverErrors = extractValidationErrors(err);
+      if (Object.keys(serverErrors).length > 0) {
+        setFieldErrors(serverErrors);
+      } else {
+        setError('Failed to create project. Check the details and try again.');
+      }
     } finally {
       setSaving(false);
     }
@@ -223,8 +255,8 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
         {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2">{error}</div>}
         {loadError && <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 text-sm rounded-lg px-3 py-2">{loadError}</div>}
         <div className="grid grid-cols-3 gap-4">
-          <Field label="Name" value={name} onChange={setName} required className="col-span-2" />
-          <Field label="Key" value={key} onChange={setKey} required maxLength={10} />
+          <Field label="Name" value={name} onChange={setName} required className="col-span-2" error={fieldErrors.name} />
+          <Field label="Key" value={key} onChange={setKey} required maxLength={10} error={fieldErrors.key} />
         </div>
         <Field label="Description" value={description} onChange={setDescription} textarea />
         <div className="grid grid-cols-2 gap-4">
@@ -253,16 +285,18 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
                 <option value="CLOSING">Closing</option>
               </select>
             </div>
-            <Field label="Strategic Score (1-10)" value={strategicScore} onChange={(v) => setStrategicScore(v.replace(/[^0-9]/g, ''))} />
+            <Field label="Strategic Score (1-10)" value={strategicScore} onChange={(v) => setStrategicScore(v.replace(/[^0-9]/g, ''))} error={fieldErrors.strategicScore} />
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Planned Value ($)</label>
-              <input type="text" value={plannedValue} onChange={(e) => setPlannedValue(e.target.value)} placeholder="0" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              <input type="text" value={plannedValue} onChange={(e) => setPlannedValue(e.target.value)} placeholder="0" className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 ${fieldErrors.plannedValue ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-primary-500'}`} />
+              {fieldErrors.plannedValue && <p className="mt-1 text-sm text-red-600">{fieldErrors.plannedValue}</p>}
             </div>
           </div>
           <div className="grid grid-cols-3 gap-4 mt-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Budget ($)</label>
-              <input type="text" value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="0" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              <input type="text" value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="0" className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 ${fieldErrors.budget ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-primary-500'}`} />
+              {fieldErrors.budget && <p className="mt-1 text-sm text-red-600">{fieldErrors.budget}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
@@ -270,7 +304,8 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-              <input type="date" value={targetEndDate} onChange={(e) => setTargetEndDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              <input type="date" value={targetEndDate} onChange={(e) => setTargetEndDate(e.target.value)} className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 ${fieldErrors.targetEndDate ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-primary-500'}`} />
+              {fieldErrors.targetEndDate && <p className="mt-1 text-sm text-red-600">{fieldErrors.targetEndDate}</p>}
             </div>
           </div>
         </div>

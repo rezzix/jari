@@ -4,8 +4,6 @@ import com.jari.common.dto.ApiResponse;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -26,10 +24,10 @@ public class TimesheetController {
     }
 
     @GetMapping("/weekly")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EXECUTIVE')")
     public ResponseEntity<ApiResponse<Object>> weekly(
             @RequestParam Long userId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStart,
-            @AuthenticationPrincipal UserDetails currentUser) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStart) {
         LocalDate weekEnd = weekStart.plusDays(6);
         List<TimeLog> logs = timeLogService.getWeeklyTimesheet(userId, weekStart, weekEnd);
 
@@ -46,10 +44,10 @@ public class TimesheetController {
     }
 
     @GetMapping("/daily")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EXECUTIVE')")
     public ResponseEntity<ApiResponse<Object>> daily(
             @RequestParam Long userId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @AuthenticationPrincipal UserDetails currentUser) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         List<TimeLog> logs = timeLogService.getDailyTimesheet(userId, date);
         return ResponseEntity.ok(ApiResponse.of(Map.of(
                 "userId", userId,
