@@ -10,7 +10,8 @@ A Jira-like project management system with time tracking and built-in project do
 - **Project Documentation** — Wiki-style pages with nested tree structure and search
 - **Sprint Management** — Backlog view, sprint creation, issue assignment to sprints
 - **Admin Panel** — User management, programs, organization config, issue types/statuses
-- **Role-Based Access** — Admin, Manager, and Contributor roles with appropriate permissions
+- **Multi-Company Support** — Projects and users belong to companies or are global; company-scoped visibility
+- **Role-Based Access** — Admin, Manager, Executive, and Contributor roles with appropriate permissions
 
 ## Tech Stack
 
@@ -78,13 +79,18 @@ The frontend starts at `http://localhost:5173` and proxies API calls to the back
 
 ### Default Users
 
-The data seeder creates these test accounts:
+The data seeder creates these test accounts (all passwords: `password123`):
 
-| Username | Password | Role |
-|----------|----------|------|
-| admin | admin123 | ADMIN |
-| manager | manager123 | MANAGER |
-| contributor | contrib123 | CONTRIBUTOR |
+| Username | Role | Company |
+|----------|------|---------|
+| admin | ADMIN | Global |
+| cto | EXECUTIVE | Global |
+| sarah | MANAGER | Acme Corp |
+| alex | CONTRIBUTOR | Acme Corp |
+| maria | CONTRIBUTOR | Acme Corp |
+| diana | MANAGER | Global Corp |
+| james | CONTRIBUTOR | Global Corp |
+| lee | CONTRIBUTOR | Global Corp |
 
 ## API Overview
 
@@ -92,6 +98,7 @@ The data seeder creates these test accounts:
 |----------|-----------|
 | Auth | `/api/auth/*` |
 | Users | `/api/users` |
+| Companies | `/api/companies` |
 | Programs | `/api/programs` |
 | Projects | `/api/projects` |
 | Issues | `/api/projects/{projectId}/issues` |

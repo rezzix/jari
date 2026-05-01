@@ -13,7 +13,8 @@ jari/
 ├── backend/                  # Spring Boot application
 │   ├── src/main/java/com/jari/
 │   │   ├── config/            # Security, WebSocket, Organization, IssueConfig, DataSeeder
-│   │   ├── security/          # AuthController, CustomUserDetailsService, SecurityConfig
+│   │   ├── company/           # Company CRUD (multi-tenant)
+│   │   ├── security/          # AuthController, CustomUserDetailsService, CustomUserDetails, SecurityConfig
 │   │   ├── common/            # DTOs, exceptions, audit, storage
 │   │   ├── user/              # User CRUD
 │   │   ├── program/           # Program CRUD
@@ -55,10 +56,11 @@ On startup, the database is populated with:
 
 | Resource | Defaults |
 |----------|----------|
-| Organization | "My Organization" |
+| Companies | "Acme Corp" (ACME), "Global Corp" (GCORP) |
+| Organization Config | "Jari Global" (global), "Acme Corp" (ACME), "Global Corp" (GCORP) |
 | Issue Types | Project Management, Tech Lead, Architecture, Development, Data Analysis, Testing |
 | Issue Statuses | To Do (default), In Progress, Done |
-| Admin User | username: `admin`, password: `admin123` |
+| Admin User | username: `admin`, password: `password123` |
 
 ### H2 Console
 
@@ -80,7 +82,7 @@ All endpoints except `/api/auth/login` require a valid session cookie (`JSESSION
 # Login and save session cookie
 curl -s -c cookies.txt http://localhost:8080/api/auth/login \
   -X POST -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}'
+  -d '{"username":"admin","password":"password123"}'
 
 # Use -b cookies.txt for subsequent requests
 curl -s -b cookies.txt http://localhost:8080/api/auth/me
@@ -94,6 +96,7 @@ curl -s -b cookies.txt http://localhost:8080/api/auth/me
 | POST | `/api/auth/logout` | Logout |
 | GET | `/api/auth/me` | Current user |
 | GET/POST | `/api/users` | User management (Admin) |
+| GET/POST | `/api/companies` | Company management (Admin) |
 | GET/PUT | `/api/organization` | Organization config (Admin) |
 | GET/POST/PUT/DELETE | `/api/issue-types` | Issue types (Admin write, all read) |
 | GET/POST/PUT/DELETE | `/api/issue-statuses` | Issue statuses (Admin write, all read) |
@@ -116,17 +119,17 @@ curl -s -b cookies.txt http://localhost:8080/api/auth/me
 # 1. Login
 curl -s -c cookies.txt localhost:8080/api/auth/login \
   -X POST -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}'
+  -d '{"username":"admin","password":"password123"}'
 
 # 2. Create a program
 curl -s -b cookies.txt localhost:8080/api/programs \
   -X POST -H "Content-Type: application/json" \
-  -d '{"name":"Engineering","key":"ENG","description":"Engineering program","managerId":1}'
+  -d '{"name":"Engineering","key":"ENG","description":"Engineering program","managerId":1,"companyId":null}'
 
 # 3. Create a project
 curl -s -b cookies.txt localhost:8080/api/projects \
   -X POST -H "Content-Type: application/json" \
-  -d '{"name":"Jari","key":"JARI","description":"Project management","programId":1,"managerId":1,"memberIds":[1]}'
+  -d '{"name":"Jari","key":"JARI","description":"Project management","programId":1,"managerId":1,"companyId":null,"memberIds":[1]}'
 
 # 4. Create an issue
 curl -s -b cookies.txt localhost:8080/api/projects/1/issues \
