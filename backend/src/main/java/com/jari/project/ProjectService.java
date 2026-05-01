@@ -3,6 +3,8 @@ package com.jari.project;
 import com.jari.common.exception.DuplicateKeyException;
 import com.jari.common.exception.EntityNotFoundException;
 import com.jari.common.exception.ForbiddenException;
+import com.jari.company.Company;
+import com.jari.company.CompanyRepository;
 import com.jari.config.IssueStatus;
 import com.jari.config.IssueStatusRepository;
 import com.jari.program.Program;
@@ -33,12 +35,13 @@ public class ProjectService {
     private final IssueStatusRepository statusRepository;
     private final IssueRepository issueRepository;
     private final ProjectFavoriteRepository favoriteRepository;
+    private final CompanyRepository companyRepository;
 
     public ProjectService(ProjectRepository projectRepository, ProjectMemberRepository memberRepository,
                           LabelRepository labelRepository, BoardColumnRepository boardColumnRepository,
                           ProgramRepository programRepository, UserRepository userRepository,
                           IssueStatusRepository statusRepository, IssueRepository issueRepository,
-                          ProjectFavoriteRepository favoriteRepository) {
+                          ProjectFavoriteRepository favoriteRepository, CompanyRepository companyRepository) {
         this.projectRepository = projectRepository;
         this.memberRepository = memberRepository;
         this.labelRepository = labelRepository;
@@ -48,18 +51,19 @@ public class ProjectService {
         this.statusRepository = statusRepository;
         this.issueRepository = issueRepository;
         this.favoriteRepository = favoriteRepository;
+        this.companyRepository = companyRepository;
     }
 
     @Transactional(readOnly = true)
-    public Page<Project> search(String search, Long programId, Long managerId, int page, int size, String sort) {
+    public Page<Project> search(String search, Long programId, Long managerId, Long companyId, int page, int size, String sort) {
         Sort.Direction direction = Sort.Direction.fromString(sort.split(",")[1]);
         PageRequest pageRequest = PageRequest.of(page, size, direction, sort.split(",")[0]);
-        return projectRepository.search(search, programId, managerId, pageRequest);
+        return projectRepository.search(search, programId, managerId, companyId, pageRequest);
     }
 
     @Transactional(readOnly = true)
-    public Page<Project> searchByMember(Long userId, int page, int size) {
-        return projectRepository.findByMemberUserId(userId, PageRequest.of(page, size));
+    public Page<Project> searchByMember(Long userId, Long companyId, int page, int size) {
+        return projectRepository.findByMemberUserIdAndCompany(userId, companyId, PageRequest.of(page, size));
     }
 
     @Transactional(readOnly = true)
@@ -69,7 +73,7 @@ public class ProjectService {
     }
 
     @Transactional
-    public Project create(ProjectDto.CreateRequest request) {
+    public Project create(ProjectDto.CreateRequest request, Long companyId) {
         if (projectRepository.existsByKey(request.key())) {
             throw new DuplicateKeyException("Project key already exists: " + request.key());
         }
@@ -78,12 +82,25 @@ public class ProjectService {
         User manager = userRepository.findById(request.managerId())
                 .orElseThrow(() -> new EntityNotFoundException("User", request.managerId()));
 
+        // Validate company consistency
+        if (companyId != null && program.getCompany() != null && !program.getCompany().getId().equals(companyId)) {
+            throw new ForbiddenException("Program must belong to the same company as the project");
+        }
+        if (companyId != null && manager.getCompany() != null && !manager.getCompany().getId().equals(companyId)) {
+            throw new ForbiddenException("Manager must belong to the same company as the project or be a global user");
+        }
+
         Project project = new Project();
         project.setName(request.name());
         project.setKey(request.key().toUpperCase());
         project.setDescription(request.description());
         project.setProgram(program);
         project.setManager(manager);
+        if (companyId != null) {
+            Company company = companyRepository.findById(companyId)
+                    .orElseThrow(() -> new EntityNotFoundException("Company", companyId));
+            project.setCompany(company);
+        }
         if (request.stage() != null) project.setStage(Project.Stage.valueOf(request.stage()));
         if (request.strategicScore() != null) project.setStrategicScore(request.strategicScore());
         if (request.plannedValue() != null) project.setPlannedValue(new BigDecimal(request.plannedValue()));
@@ -175,6 +192,11 @@ public class ProjectService {
             if (!memberRepository.existsByProjectIdAndUserId(projectId, userId)) {
                 User user = userRepository.findById(userId)
                         .orElseThrow(() -> new EntityNotFoundException("User", userId));
+                // Validate company compatibility
+                if (project.getCompany() != null && user.getCompany() != null
+                        && !user.getCompany().getId().equals(project.getCompany().getId())) {
+                    throw new ForbiddenException("Cannot add user from a different company to this project");
+                }
                 memberRepository.save(new ProjectMember(project, user));
             }
         }

@@ -1,4 +1,5 @@
 export type { ApiResponse, PaginatedResponse, PaginationInfo, ApiError, ValidationError, FieldError } from './api';
+export type { CompanyDto, CreateCompanyRequest, UpdateCompanyRequest } from './company';
 export type { UserDto, UserRole, LoginRequest, UpdateProfileRequest, PasswordChangeRequest } from './user';
 export type { ProjectDto, CreateProjectRequest, UpdateProjectRequest, MemberDto, LabelDto, LabelCreateRequest, BoardColumnDto, BoardConfigDto, BoardUpdateRequest } from './project';
 export type { IssueDto, IssuePriority, CreateIssueRequest, UpdateIssueRequest, CommentDto, CreateCommentRequest, UpdateCommentRequest } from './issue';

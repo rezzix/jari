@@ -4,6 +4,8 @@ import com.jari.common.exception.BadRequestException;
 import com.jari.common.exception.DuplicateKeyException;
 import com.jari.common.exception.EntityNotFoundException;
 import com.jari.common.exception.ForbiddenException;
+import com.jari.company.Company;
+import com.jari.company.CompanyRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -16,17 +18,22 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CompanyRepository companyRepository;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, CompanyRepository companyRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.companyRepository = companyRepository;
     }
 
     @Transactional(readOnly = true)
-    public Page<User> search(String search, User.Role role, Boolean active, int page, int size, String sort) {
+    public Page<User> search(String search, User.Role role, Boolean active, Long companyId, int page, int size, String sort) {
         Sort.Direction direction = Sort.Direction.fromString(sort.split(",")[1]);
         PageRequest pageRequest = PageRequest.of(page, size, direction, sort.split(",")[0]);
 
+        if (companyId != null) {
+            return userRepository.searchByCompanyOrGlobal(search, companyId, pageRequest);
+        }
         if (search != null) {
             return userRepository.search(search, pageRequest);
         }
@@ -61,6 +68,11 @@ public class UserService {
         user.setFirstName(request.firstName());
         user.setLastName(request.lastName());
         user.setRole(User.Role.valueOf(request.role()));
+        if (request.companyId() != null) {
+            Company company = companyRepository.findById(request.companyId())
+                    .orElseThrow(() -> new EntityNotFoundException("Company", request.companyId()));
+            user.setCompany(company);
+        }
         return userRepository.save(user);
     }
 
@@ -78,6 +90,15 @@ public class UserService {
         if (request.lastName() != null) user.setLastName(request.lastName());
         if (request.role() != null) user.setRole(User.Role.valueOf(request.role()));
         if (request.active() != null) user.setActive(request.active());
+        if (request.companyId() != null) {
+            if (request.companyId() == 0) {
+                user.setCompany(null);
+            } else {
+                Company company = companyRepository.findById(request.companyId())
+                        .orElseThrow(() -> new EntityNotFoundException("Company", request.companyId()));
+                user.setCompany(company);
+            }
+        }
 
         return userRepository.save(user);
     }

@@ -43,13 +43,17 @@ public class ProjectController {
             @AuthenticationPrincipal UserDetails currentUser) {
 
         Long userId = authHelper.getCurrentUserId(currentUser);
-        boolean isAdminOrManagerOrExecutive = authHelper.hasAnyRole(currentUser, "ADMIN", "MANAGER", "EXECUTIVE");
+        Long companyId = authHelper.getCurrentCompanyId(currentUser);
+        boolean isAdmin = authHelper.hasAnyRole(currentUser, "ADMIN");
+        boolean isManagerOrExecutive = authHelper.hasAnyRole(currentUser, "MANAGER", "EXECUTIVE");
 
         Page<Project> result;
-        if (isAdminOrManagerOrExecutive) {
-            result = projectService.search(search, programId, managerId, page, size, sort);
+        if (isAdmin) {
+            result = projectService.search(search, programId, managerId, null, page, size, sort);
+        } else if (isManagerOrExecutive) {
+            result = projectService.search(search, programId, managerId, companyId, page, size, sort);
         } else {
-            result = projectService.searchByMember(userId, page, size);
+            result = projectService.searchByMember(userId, companyId, page, size);
         }
 
         Set<Long> favoriteIds = projectService.getFavoriteProjectIds(userId);
@@ -87,8 +91,14 @@ public class ProjectController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<ApiResponse<ProjectDto>> create(@Valid @RequestBody ProjectDto.CreateRequest request) {
-        Project created = projectService.create(request);
+    public ResponseEntity<ApiResponse<ProjectDto>> create(
+            @Valid @RequestBody ProjectDto.CreateRequest request,
+            @AuthenticationPrincipal UserDetails currentUser) {
+        Long companyId = request.companyId();
+        if (companyId == null && !authHelper.hasAnyRole(currentUser, "ADMIN")) {
+            companyId = authHelper.getCurrentCompanyId(currentUser);
+        }
+        Project created = projectService.create(request, companyId);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(projectMapper.toDto(created)));
     }
 

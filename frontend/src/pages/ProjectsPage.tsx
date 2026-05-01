@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { ProjectDto, ProgramDto, UserDto } from '@/types';
+import type { ProjectDto, ProgramDto, UserDto, CompanyDto } from '@/types';
 import { listProjects, createProject, toggleProjectFavorite } from '@/api/projects';
 import { listPrograms } from '@/api/admin';
+import { listCompanies } from '@/api/companies';
 import Modal from '@/components/common/Modal';
 import Field from '@/components/common/Field';
 import { listAllUsers } from '@/api/users';
@@ -86,6 +87,7 @@ export default function ProjectsPage() {
                     {p.description && <p className="text-xs text-gray-500 line-clamp-2 mb-3">{p.description}</p>}
                     <div className="flex items-center gap-4 text-xs text-gray-400">
                       <span>{p.programName ?? '—'}</span>
+                      <span>{p.companyName ?? 'Global'}</span>
                       <span>{p.managerName}</span>
                     </div>
                   </div>
@@ -102,6 +104,7 @@ export default function ProjectsPage() {
                   <th className="text-left px-2 py-3 font-medium text-gray-500">Key</th>
                   <th className="text-left px-2 py-3 font-medium text-gray-500">Name</th>
                   <th className="text-left px-2 py-3 font-medium text-gray-500">Program</th>
+                  <th className="text-left px-2 py-3 font-medium text-gray-500">Company</th>
                   <th className="text-left px-2 py-3 font-medium text-gray-500">Manager</th>
                   <th className="text-left px-2 py-3 font-medium text-gray-500">Created</th>
                 </tr>
@@ -125,6 +128,7 @@ export default function ProjectsPage() {
                     <td className="px-2 py-3 font-mono text-xs text-primary-600">{p.key}</td>
                     <td className="px-2 py-3 font-medium text-gray-900">{p.name}</td>
                     <td className="px-2 py-3 text-gray-500">{p.programName ?? '—'}</td>
+                    <td className="px-2 py-3">{p.companyName ? <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">{p.companyName}</span> : <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">Global</span>}</td>
                     <td className="px-2 py-3 text-gray-500">{p.managerName}</td>
                     <td className="px-2 py-3 text-gray-500">{formatDate(p.createdAt)}</td>
                   </tr>
@@ -169,6 +173,8 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
   const [targetEndDate, setTargetEndDate] = useState('');
   const [programs, setPrograms] = useState<ProgramDto[]>([]);
   const [users, setUsers] = useState<UserDto[]>([]);
+  const [companies, setCompanies] = useState<CompanyDto[]>([]);
+  const [companyId, setCompanyId] = useState<string>('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -184,6 +190,7 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
       setUsers(users);
       if (users.length > 0) setManagerId(String(users[0].id));
     }).catch(() => setLoadError('Failed to load users. You may not have permission.'));
+    listCompanies().then((res) => setCompanies(res.data.filter((c) => c.active))).catch(() => {});
   }, []);
 
   const validate = (): boolean => {
@@ -222,6 +229,7 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
         description: description || undefined,
         programId: Number(programId),
         managerId: Number(managerId),
+        companyId: companyId ? Number(companyId) : null,
         memberIds: memberIds.length > 0 ? memberIds : undefined,
         stage: stage || undefined,
         strategicScore: strategicScore ? Number(strategicScore) : undefined,
@@ -259,7 +267,7 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
           <Field label="Key" value={key} onChange={setKey} required maxLength={10} error={fieldErrors.key} />
         </div>
         <Field label="Description" value={description} onChange={setDescription} textarea />
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Program</label>
             <select value={programId} onChange={(e) => setProgramId(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
@@ -270,6 +278,13 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
             <label className="block text-sm font-medium text-gray-700 mb-1">Manager</label>
             <select value={managerId} onChange={(e) => setManagerId(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
               {eligibleManagers.map((u) => <option key={u.id} value={u.id}>{u.firstName} {u.lastName} ({u.username})</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
+            <select value={companyId} onChange={(e) => setCompanyId(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+              <option value="">Global</option>
+              {companies.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.key})</option>)}
             </select>
           </div>
         </div>

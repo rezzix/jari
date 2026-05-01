@@ -27,4 +27,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
            "OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) " +
            "OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<User> search(String search, Pageable pageable);
+
+    @Query("SELECT u FROM User u WHERE " +
+           "(:companyId IS NULL OR u.company.id = :companyId OR u.company.id IS NULL) AND " +
+           "(:search IS NULL OR LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<User> searchByCompanyOrGlobal(String search, Long companyId, Pageable pageable);
+
+    @Query("SELECT u FROM User u WHERE (:companyId IS NULL OR u.company.id = :companyId OR u.company.id IS NULL)")
+    Page<User> findByCompanyOrGlobal(Long companyId, Pageable pageable);
 }

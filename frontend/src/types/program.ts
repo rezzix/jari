@@ -5,6 +5,8 @@ export interface ProgramDto {
   description: string | null;
   managerId: number;
   managerName: string;
+  companyId: number | null;
+  companyName: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -14,6 +16,7 @@ export interface CreateProgramRequest {
   key: string;
   description?: string;
   managerId: number;
+  companyId?: number | null;
 }
 
 export interface UpdateProgramRequest {

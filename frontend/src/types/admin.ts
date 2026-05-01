@@ -35,6 +35,7 @@ export interface CreateUserRequest {
   firstName: string;
   lastName: string;
   role: string;
+  companyId?: number | null;
 }
 
 export interface AdminUpdateUserRequest {
@@ -43,6 +44,7 @@ export interface AdminUpdateUserRequest {
   lastName?: string;
   role?: string;
   active?: boolean;
+  companyId?: number | null;
 }
 
 export interface CreateIssueTypeRequest {

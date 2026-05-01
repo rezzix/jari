@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { UserDto, ProgramDto } from '@/types';
+import type { UserDto, ProgramDto, CompanyDto } from '@/types';
 import Modal from '@/components/common/Modal';
 import Field from '@/components/common/Field';
 import Spinner from '@/components/common/Spinner';
 import {
   listUsers, listPrograms, createProgram, updateProgram, deleteProgram,
 } from '@/api/admin';
+import { listCompanies } from '@/api/companies';
 import { formatDate } from '@/utils/format';
 
 function SpinnerWrapper() {
@@ -56,6 +57,7 @@ export default function ProgramsTab() {
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Key</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Name</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Manager</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Company</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Created</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Actions</th>
               </tr>
@@ -66,6 +68,13 @@ export default function ProgramsTab() {
                   <td className="px-4 py-3 font-mono text-xs">{p.key}</td>
                   <td className="px-4 py-3 font-medium">{p.name}</td>
                   <td className="px-4 py-3">{p.managerName}</td>
+                  <td className="px-4 py-3">
+                    {p.companyName ? (
+                      <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">{p.companyName}</span>
+                    ) : (
+                      <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">Global</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-gray-500">{formatDate(p.createdAt)}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
@@ -91,7 +100,9 @@ function CreateProgramModal({ onClose }: { onClose: () => void }) {
   const [key, setKey] = useState('');
   const [description, setDescription] = useState('');
   const [managerId, setManagerId] = useState('');
+  const [companyId, setCompanyId] = useState<string>('');
   const [users, setUsers] = useState<UserDto[]>([]);
+  const [companies, setCompanies] = useState<CompanyDto[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -101,6 +112,7 @@ function CreateProgramModal({ onClose }: { onClose: () => void }) {
       setUsers(mgrs);
       if (mgrs.length > 0) setManagerId(String(mgrs[0].id));
     });
+    listCompanies().then((res) => setCompanies(res.data.filter((c) => c.active)));
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -108,7 +120,7 @@ function CreateProgramModal({ onClose }: { onClose: () => void }) {
     setSaving(true);
     setError(null);
     try {
-      await createProgram({ name, key: key.toUpperCase(), description: description || undefined, managerId: Number(managerId) });
+      await createProgram({ name, key: key.toUpperCase(), description: description || undefined, managerId: Number(managerId), companyId: companyId ? Number(companyId) : null });
       onClose();
     } catch {
       setError('Failed to create program.');
@@ -126,11 +138,20 @@ function CreateProgramModal({ onClose }: { onClose: () => void }) {
           <Field label="Key" value={key} onChange={setKey} required maxLength={10} />
         </div>
         <Field label="Description" value={description} onChange={setDescription} textarea />
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Manager</label>
-          <select value={managerId} onChange={(e) => setManagerId(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
-            {users.map((u) => <option key={u.id} value={u.id}>{u.firstName} {u.lastName} ({u.username})</option>)}
-          </select>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Manager</label>
+            <select value={managerId} onChange={(e) => setManagerId(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+              {users.map((u) => <option key={u.id} value={u.id}>{u.firstName} {u.lastName} ({u.username})</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
+            <select value={companyId} onChange={(e) => setCompanyId(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+              <option value="">Global</option>
+              {companies.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.key})</option>)}
+            </select>
+          </div>
         </div>
         <div className="flex justify-end gap-3 pt-2">
           <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100">Cancel</button>

@@ -3,6 +3,7 @@ package com.jari.user;
 import com.jari.common.dto.ApiResponse;
 import com.jari.common.dto.PaginatedResponse;
 import com.jari.common.dto.PaginatedResponse.PaginationInfo;
+import com.jari.security.AuthHelper;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -18,10 +19,12 @@ public class UserController {
 
     private final UserService userService;
     private final UserMapper userMapper;
+    private final AuthHelper authHelper;
 
-    public UserController(UserService userService, UserMapper userMapper) {
+    public UserController(UserService userService, UserMapper userMapper, AuthHelper authHelper) {
         this.userService = userService;
         this.userMapper = userMapper;
+        this.authHelper = authHelper;
     }
 
     @GetMapping
@@ -32,10 +35,12 @@ public class UserController {
             @RequestParam(required = false) Boolean active,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "createdAt,desc") String sort) {
+            @RequestParam(defaultValue = "createdAt,desc") String sort,
+            @AuthenticationPrincipal UserDetails currentUser) {
 
+        Long companyId = authHelper.hasAnyRole(currentUser, "ADMIN") ? null : authHelper.getCurrentCompanyId(currentUser);
         User.Role roleEnum = role != null ? User.Role.valueOf(role) : null;
-        Page<User> result = userService.search(search, roleEnum, active, page, size, sort);
+        Page<User> result = userService.search(search, roleEnum, active, companyId, page, size, sort);
 
         return ResponseEntity.ok(PaginatedResponse.of(
                 userMapper.toDtoList(result.getContent()),
@@ -64,14 +69,15 @@ public class UserController {
     }
 
     @PutMapping("/{id}/password")
-    @PreAuthorize("hasRole('ADMIN') or #id.toString() == authentication.principal.username")
     public ResponseEntity<ApiResponse<Object>> changePassword(
             @PathVariable Long id,
             @Valid @RequestBody UserDto.PasswordChangeRequest request,
             @AuthenticationPrincipal UserDetails currentUser) {
 
-        boolean isAdmin = currentUser.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        boolean isAdmin = authHelper.hasAnyRole(currentUser, "ADMIN");
+        if (!isAdmin) {
+            authHelper.requireSelfOrAdmin(currentUser, id);
+        }
         userService.changePassword(id, request, isAdmin);
         return ResponseEntity.ok(ApiResponse.of("Password changed"));
     }

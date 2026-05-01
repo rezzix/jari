@@ -1,5 +1,6 @@
 package com.jari.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.jari.company.Company;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -22,6 +23,7 @@ public class OrganizationConfig {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id")
+    @JsonIgnore
     private Company company;
 
     @CreationTimestamp

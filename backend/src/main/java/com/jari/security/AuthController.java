@@ -50,7 +50,12 @@ public class AuthController {
         session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        Long userId = Long.parseLong(userDetails.getUsername());
+        Long userId;
+        if (userDetails instanceof CustomUserDetails details) {
+            userId = details.getUserId();
+        } else {
+            userId = Long.parseLong(userDetails.getUsername());
+        }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BadRequestException("User not found"));
 
@@ -65,7 +70,12 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserDto>> me(@AuthenticationPrincipal UserDetails currentUser) {
-        Long userId = Long.parseLong(currentUser.getUsername());
+        Long userId;
+        if (currentUser instanceof CustomUserDetails details) {
+            userId = details.getUserId();
+        } else {
+            userId = Long.parseLong(currentUser.getUsername());
+        }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BadRequestException("User not found"));
         return ResponseEntity.ok(ApiResponse.of(userMapper.toDto(user)));

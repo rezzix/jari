@@ -2,6 +2,9 @@ package com.jari.program;
 
 import com.jari.common.exception.DuplicateKeyException;
 import com.jari.common.exception.EntityNotFoundException;
+import com.jari.common.exception.ForbiddenException;
+import com.jari.company.Company;
+import com.jari.company.CompanyRepository;
 import com.jari.user.User;
 import com.jari.user.UserRepository;
 import org.springframework.data.domain.Page;
@@ -15,16 +18,24 @@ public class ProgramService {
 
     private final ProgramRepository programRepository;
     private final UserRepository userRepository;
+    private final CompanyRepository companyRepository;
 
-    public ProgramService(ProgramRepository programRepository, UserRepository userRepository) {
+    public ProgramService(ProgramRepository programRepository, UserRepository userRepository, CompanyRepository companyRepository) {
         this.programRepository = programRepository;
         this.userRepository = userRepository;
+        this.companyRepository = companyRepository;
     }
 
     @Transactional(readOnly = true)
-    public Page<Program> search(String search, int page, int size, String sort) {
+    public Page<Program> search(String search, Long companyId, int page, int size, String sort) {
         Sort.Direction direction = Sort.Direction.fromString(sort.split(",")[1]);
         PageRequest pageRequest = PageRequest.of(page, size, direction, sort.split(",")[0]);
+        if (companyId != null) {
+            if (search != null && !search.isBlank()) {
+                return programRepository.searchByCompany(search, companyId, pageRequest);
+            }
+            return programRepository.findByCompanyIdOrNull(companyId, pageRequest);
+        }
         if (search != null && !search.isBlank()) {
             return programRepository.search(search, pageRequest);
         }
@@ -38,18 +49,27 @@ public class ProgramService {
     }
 
     @Transactional
-    public Program create(ProgramDto.CreateRequest request) {
+    public Program create(ProgramDto.CreateRequest request, Long companyId) {
         if (programRepository.existsByKey(request.key())) {
             throw new DuplicateKeyException("Program key already exists: " + request.key());
         }
         User manager = userRepository.findById(request.managerId())
                 .orElseThrow(() -> new EntityNotFoundException("User", request.managerId()));
 
+        if (companyId != null && manager.getCompany() != null && !manager.getCompany().getId().equals(companyId)) {
+            throw new ForbiddenException("Manager must belong to the same company as the program or be a global user");
+        }
+
         Program program = new Program();
         program.setName(request.name());
         program.setKey(request.key().toUpperCase());
         program.setDescription(request.description());
         program.setManager(manager);
+        if (companyId != null) {
+            Company company = companyRepository.findById(companyId)
+                    .orElseThrow(() -> new EntityNotFoundException("Company", companyId));
+            program.setCompany(company);
+        }
         return programRepository.save(program);
     }
 

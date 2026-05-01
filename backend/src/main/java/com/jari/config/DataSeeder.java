@@ -1,5 +1,7 @@
 package com.jari.config;
 
+import com.jari.company.Company;
+import com.jari.company.CompanyRepository;
 import com.jari.issue.Issue;
 import com.jari.issue.IssueRepository;
 import com.jari.pmo.RaidItem;
@@ -42,6 +44,8 @@ public class DataSeeder implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CompanyRepository companyRepository;
+    private final OrganizationConfigRepository organizationConfigRepository;
     private final ProgramRepository programRepository;
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
@@ -58,6 +62,8 @@ public class DataSeeder implements CommandLineRunner {
 
     public DataSeeder(UserRepository userRepository,
                       PasswordEncoder passwordEncoder,
+                      CompanyRepository companyRepository,
+                      OrganizationConfigRepository organizationConfigRepository,
                       ProgramRepository programRepository,
                       ProjectRepository projectRepository,
                       ProjectMemberRepository projectMemberRepository,
@@ -73,6 +79,8 @@ public class DataSeeder implements CommandLineRunner {
                       ProjectFavoriteRepository projectFavoriteRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.companyRepository = companyRepository;
+        this.organizationConfigRepository = organizationConfigRepository;
         this.programRepository = programRepository;
         this.projectRepository = projectRepository;
         this.projectMemberRepository = projectMemberRepository;
@@ -92,13 +100,24 @@ public class DataSeeder implements CommandLineRunner {
     public void run(String... args) {
         if (userRepository.count() > 1) return;
 
+        // Companies
+        Company acme = createCompany("Acme Corp", "ACME", "Global technology solutions provider");
+        Company gcorp = createCompany("Global Corp", "GCORP", "International consulting firm");
+
+        // Organization configs (per-company + global)
+        createOrgConfig("Jari Global", null);
+        createOrgConfig("Acme Corp", acme);
+        createOrgConfig("Global Corp", gcorp);
+
         // Users
-        User admin = createUser("admin", "admin@jari.com", "Admin", "User", User.Role.ADMIN);
-        User pm = createUser("sarah", "sarah@jari.com", "Sarah", "Johnson", User.Role.MANAGER);
-        User dev1 = createUser("alex", "alex@jari.com", "Alex", "Chen", User.Role.CONTRIBUTOR);
-        User dev2 = createUser("maria", "maria@jari.com", "Maria", "Garcia", User.Role.CONTRIBUTOR);
-        User dev3 = createUser("james", "james@jari.com", "James", "Wilson", User.Role.CONTRIBUTOR);
-        User executive = createUser("cto", "cto@jari.com", "Robert", "Kim", User.Role.EXECUTIVE);
+        User admin = createUser("admin", "admin@jari.com", "Admin", "User", User.Role.ADMIN, null);
+        User pm = createUser("sarah", "sarah@jari.com", "Sarah", "Johnson", User.Role.MANAGER, acme);
+        User dev1 = createUser("alex", "alex@jari.com", "Alex", "Chen", User.Role.CONTRIBUTOR, acme);
+        User dev2 = createUser("maria", "maria@jari.com", "Maria", "Garcia", User.Role.CONTRIBUTOR, acme);
+        User dev3 = createUser("james", "james@jari.com", "James", "Wilson", User.Role.CONTRIBUTOR, gcorp);
+        User dev4 = createUser("lee", "lee@jari.com", "Lee", "Park", User.Role.CONTRIBUTOR, gcorp);
+        User pmGcorp = createUser("diana", "diana@jari.com", "Diana", "Ross", User.Role.MANAGER, gcorp);
+        User executive = createUser("cto", "cto@jari.com", "Robert", "Kim", User.Role.EXECUTIVE, null);
 
         // User rates for EVM
         createUserRate(admin, new BigDecimal("75.00"), LocalDate.of(2025, 1, 1));
@@ -106,40 +125,44 @@ public class DataSeeder implements CommandLineRunner {
         createUserRate(dev1, new BigDecimal("65.00"), LocalDate.of(2025, 1, 1));
         createUserRate(dev2, new BigDecimal("70.00"), LocalDate.of(2025, 1, 1));
         createUserRate(dev3, new BigDecimal("60.00"), LocalDate.of(2025, 1, 1));
-
+        createUserRate(dev4, new BigDecimal("55.00"), LocalDate.of(2025, 1, 1));
+        createUserRate(pmGcorp, new BigDecimal("85.00"), LocalDate.of(2025, 1, 1));
         // Programs
-        Program digitalTransform = createProgram("Digital Transformation", "DX", "Enterprise digital transformation initiative", pm);
-        Program mobilePlatform = createProgram("Mobile Platform", "MOB", "Mobile app platform development", pm);
+        Program digitalTransform = createProgram("Digital Transformation", "DX", "Enterprise digital transformation initiative", pm, acme);
+        Program mobilePlatform = createProgram("Mobile Platform", "MOB", "Mobile app platform development", pmGcorp, gcorp);
+        Program globalInit = createProgram("Global Initiative", "GI", "Cross-company strategic initiative", executive, null);
 
         // Projects with PMO fields
         Project portal = createProject("Customer Portal", "CP", "Customer-facing self-service portal",
                 digitalTransform, pm, Project.Stage.EXECUTION, 8,
                 new BigDecimal("150000"), new BigDecimal("150000"), new BigDecimal("12000"),
-                LocalDate.of(2025, 1, 15), LocalDate.of(2025, 9, 30));
+                LocalDate.of(2025, 1, 15), LocalDate.of(2025, 9, 30), acme);
 
         Project apiGateway = createProject("API Gateway", "AG", "Central API gateway and service mesh",
                 digitalTransform, pm, Project.Stage.PLANNING, 6,
                 new BigDecimal("80000"), new BigDecimal("80000"), new BigDecimal("3500"),
-                LocalDate.of(2025, 3, 1), LocalDate.of(2025, 12, 15));
+                LocalDate.of(2025, 3, 1), LocalDate.of(2025, 12, 15), acme);
 
         Project mobileApp = createProject("Mobile App", "MA", "Cross-platform mobile application",
-                mobilePlatform, pm, Project.Stage.EXECUTION, 7,
+                mobilePlatform, pmGcorp, Project.Stage.EXECUTION, 7,
                 new BigDecimal("200000"), new BigDecimal("200000"), new BigDecimal("45000"),
-                LocalDate.of(2025, 2, 1), LocalDate.of(2025, 10, 31));
+                LocalDate.of(2025, 2, 1), LocalDate.of(2025, 10, 31), gcorp);
 
         Project infraUpgrade = createProject("Infrastructure Upgrade", "IU", "Cloud infrastructure modernization",
-                mobilePlatform, pm, Project.Stage.INITIATION, 5,
+                globalInit, executive, Project.Stage.INITIATION, 5,
                 new BigDecimal("50000"), new BigDecimal("50000"), BigDecimal.ZERO,
-                LocalDate.of(2025, 6, 1), LocalDate.of(2025, 11, 30));
+                LocalDate.of(2025, 6, 1), LocalDate.of(2025, 11, 30), null);
 
-        // Add members
+        // Add members (respecting company scope: ACME users to ACME projects, GCORP users to GCORP projects, global to any)
         addMember(portal, admin);
         addMember(portal, dev1);
         addMember(portal, dev2);
         addMember(apiGateway, dev1);
-        addMember(apiGateway, dev3);
-        addMember(mobileApp, dev2);
+        addMember(apiGateway, admin);
         addMember(mobileApp, dev3);
+        addMember(mobileApp, dev4);
+        addMember(mobileApp, pmGcorp);
+        addMember(mobileApp, admin);
         addMember(infraUpgrade, dev1);
         addMember(infraUpgrade, dev3);
 
@@ -179,11 +202,11 @@ public class DataSeeder implements CommandLineRunner {
         createIssue("CP-7", "Analytics reporting", portal, todo, Issue.Priority.MEDIUM, dev, null, pm, null, 6);
 
         // Issues for Mobile App
-        createIssue("MA-1", "Login screen", mobileApp, done, Issue.Priority.HIGH, dev, dev3, pm, sprintM1, 0);
-        createIssue("MA-2", "Navigation framework", mobileApp, done, Issue.Priority.HIGH, dev, dev2, pm, sprintM1, 1);
-        createIssue("MA-3", "Push notifications", mobileApp, inProgress, Issue.Priority.MEDIUM, dev, dev3, pm, sprintM1, 2);
-        createIssue("MA-4", "Offline mode", mobileApp, todo, Issue.Priority.HIGH, dev, null, pm, null, 3);
-        createIssue("MA-5", "Camera integration", mobileApp, todo, Issue.Priority.LOW, dev, null, pm, null, 4);
+        createIssue("MA-1", "Login screen", mobileApp, done, Issue.Priority.HIGH, dev, dev3, pmGcorp, sprintM1, 0);
+        createIssue("MA-2", "Navigation framework", mobileApp, done, Issue.Priority.HIGH, dev, dev4, pmGcorp, sprintM1, 1);
+        createIssue("MA-3", "Push notifications", mobileApp, inProgress, Issue.Priority.MEDIUM, dev, dev3, pmGcorp, sprintM1, 2);
+        createIssue("MA-4", "Offline mode", mobileApp, todo, Issue.Priority.HIGH, dev, null, pmGcorp, null, 3);
+        createIssue("MA-5", "Camera integration", mobileApp, todo, Issue.Priority.LOW, dev, null, pmGcorp, null, 4);
 
         // Issues for API Gateway
         createIssue("AG-1", "Rate limiting module", apiGateway, inProgress, Issue.Priority.HIGH, dev, dev1, pm, null, 0);
@@ -208,7 +231,7 @@ public class DataSeeder implements CommandLineRunner {
         createTimeLog(mobileApp, "MA-3", dev3, new BigDecimal("6.0"), today.minusDays(2), "Push notification backend");
         createTimeLog(mobileApp, "MA-3", dev3, new BigDecimal("5.0"), today.minusDays(1), "Push notification UI");
         createTimeLog(mobileApp, "MA-1", dev3, new BigDecimal("8.0"), today.minusDays(12), "Login screen - complete");
-        createTimeLog(mobileApp, "MA-2", dev2, new BigDecimal("7.0"), today.minusDays(11), "Navigation - complete");
+        createTimeLog(mobileApp, "MA-2", dev4, new BigDecimal("7.0"), today.minusDays(11), "Navigation - complete");
 
         // RAID items
         createRaidItem(portal, RaidItem.RaidType.RISK, "Data breach vulnerability",
@@ -232,7 +255,7 @@ public class DataSeeder implements CommandLineRunner {
         createRaidItem(mobileApp, RaidItem.RaidType.RISK, "App store rejection",
                 "Apple may reject the app for privacy policy compliance",
                 RaidItem.RaidStatus.OPEN, 3, 5, "Early submission for review and policy alignment",
-                pm, today.plusMonths(1));
+                pmGcorp, today.plusMonths(1));
 
         createRaidItem(mobileApp, RaidItem.RaidType.ISSUE, "Memory leak on Android",
                 "Android builds showing increasing memory usage over time",
@@ -252,7 +275,7 @@ public class DataSeeder implements CommandLineRunner {
                 RaidItem.RaidStatus.OPEN, null, null, null, pm, today.plusMonths(2));
     }
 
-    private User createUser(String username, String email, String firstName, String lastName, User.Role role) {
+    private User createUser(String username, String email, String firstName, String lastName, User.Role role, Company company) {
         User user = new User();
         user.setUsername(username);
         user.setEmail(email);
@@ -261,7 +284,24 @@ public class DataSeeder implements CommandLineRunner {
         user.setLastName(lastName);
         user.setRole(role);
         user.setActive(true);
+        user.setCompany(company);
         return userRepository.save(user);
+    }
+
+    private Company createCompany(String name, String key, String description) {
+        Company company = new Company();
+        company.setName(name);
+        company.setKey(key);
+        company.setDescription(description);
+        company.setActive(true);
+        return companyRepository.save(company);
+    }
+
+    private OrganizationConfig createOrgConfig(String name, Company company) {
+        OrganizationConfig config = new OrganizationConfig();
+        config.setName(name);
+        config.setCompany(company);
+        return organizationConfigRepository.save(config);
     }
 
     private UserRate createUserRate(User user, BigDecimal hourlyRate, LocalDate effectiveFrom) {
@@ -272,19 +312,20 @@ public class DataSeeder implements CommandLineRunner {
         return userRateRepository.save(rate);
     }
 
-    private Program createProgram(String name, String key, String description, User manager) {
+    private Program createProgram(String name, String key, String description, User manager, Company company) {
         Program program = new Program();
         program.setName(name);
         program.setKey(key);
         program.setDescription(description);
         program.setManager(manager);
+        program.setCompany(company);
         return programRepository.save(program);
     }
 
     private Project createProject(String name, String key, String description, Program program,
                                   User manager, Project.Stage stage, int strategicScore,
                                   BigDecimal plannedValue, BigDecimal budget, BigDecimal budgetSpent,
-                                  LocalDate targetStartDate, LocalDate targetEndDate) {
+                                  LocalDate targetStartDate, LocalDate targetEndDate, Company company) {
         Project project = new Project();
         project.setName(name);
         project.setKey(key);
@@ -298,6 +339,7 @@ public class DataSeeder implements CommandLineRunner {
         project.setBudgetSpent(budgetSpent);
         project.setTargetStartDate(targetStartDate);
         project.setTargetEndDate(targetEndDate);
+        project.setCompany(company);
         return projectRepository.save(project);
     }
 

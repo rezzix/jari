@@ -7,6 +7,8 @@ export interface UserDto {
   firstName: string;
   lastName: string;
   role: UserRole;
+  companyId: number | null;
+  companyName: string | null;
   avatarUrl: string | null;
   active: boolean;
   createdAt: string;

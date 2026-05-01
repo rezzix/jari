@@ -10,8 +10,9 @@ import UsersTab from './UsersTab';
 import ProgramsTab from './ProgramsTab';
 import IssueStatusesTab from './StatusesTab';
 import UserRatesTab from './UserRatesTab';
+import CompaniesTab from './CompaniesTab';
 
-type Tab = 'users' | 'programs' | 'organization' | 'issue-types' | 'issue-statuses' | 'user-rates';
+type Tab = 'users' | 'programs' | 'companies' | 'organization' | 'issue-types' | 'issue-statuses' | 'user-rates';
 
 function SpinnerWrapper() {
   return (
@@ -27,6 +28,7 @@ export default function AdminPage() {
   const tabs: { key: Tab; label: string }[] = [
     { key: 'users', label: 'Users' },
     { key: 'programs', label: 'Programs' },
+    { key: 'companies', label: 'Companies' },
     { key: 'organization', label: 'Organization' },
     { key: 'issue-types', label: 'Issue Types' },
     { key: 'issue-statuses', label: 'Issue Statuses' },
@@ -57,6 +59,7 @@ export default function AdminPage() {
 
       {activeTab === 'users' && <UsersTab />}
       {activeTab === 'programs' && <ProgramsTab />}
+      {activeTab === 'companies' && <CompaniesTab />}
       {activeTab === 'organization' && <OrganizationTab />}
       {activeTab === 'issue-types' && <IssueTypesTab />}
       {activeTab === 'issue-statuses' && <IssueStatusesTab />}

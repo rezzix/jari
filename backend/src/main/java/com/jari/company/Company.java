@@ -20,7 +20,7 @@ public class Company {
     @Column(nullable = false, unique = true)
     private String name;
 
-    @Column(nullable = false, unique = true, length = 10)
+    @Column(name = "\"key\"", nullable = false, unique = true, length = 10)
     private String key;
 
     @Column(columnDefinition = "TEXT")

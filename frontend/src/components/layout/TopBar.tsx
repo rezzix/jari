@@ -22,6 +22,12 @@ export default function TopBar({ title }: { title: string }) {
       </div>
       {user && (
         <div className="flex items-center gap-3">
+          {user.companyName && (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">{user.companyName}</span>
+          )}
+          {!user.companyName && user.role === 'ADMIN' && (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">Global</span>
+          )}
           <span className="text-sm text-gray-600">{user.firstName} {user.lastName}</span>
           <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-xs font-medium">
             {getInitials(user.firstName, user.lastName)}

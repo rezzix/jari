@@ -7,6 +7,8 @@ export interface ProjectDto {
   programName: string | null;
   managerId: number;
   managerName: string;
+  companyId: number | null;
+  companyName: string | null;
   stage: string | null;
   strategicScore: number | null;
   plannedValue: string | null;
@@ -25,6 +27,7 @@ export interface CreateProjectRequest {
   description?: string;
   programId: number;
   managerId: number;
+  companyId?: number | null;
   memberIds?: number[];
   stage?: string;
   strategicScore?: number;

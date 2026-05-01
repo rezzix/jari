@@ -3,11 +3,14 @@ package com.jari.program;
 import com.jari.common.dto.ApiResponse;
 import com.jari.common.dto.PaginatedResponse;
 import com.jari.common.dto.PaginatedResponse.PaginationInfo;
+import com.jari.security.AuthHelper;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -16,10 +19,12 @@ public class ProgramController {
 
     private final ProgramService programService;
     private final ProgramMapper programMapper;
+    private final AuthHelper authHelper;
 
-    public ProgramController(ProgramService programService, ProgramMapper programMapper) {
+    public ProgramController(ProgramService programService, ProgramMapper programMapper, AuthHelper authHelper) {
         this.programService = programService;
         this.programMapper = programMapper;
+        this.authHelper = authHelper;
     }
 
     @GetMapping
@@ -27,9 +32,11 @@ public class ProgramController {
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "createdAt,desc") String sort) {
+            @RequestParam(defaultValue = "createdAt,desc") String sort,
+            @AuthenticationPrincipal UserDetails currentUser) {
 
-        Page<Program> result = programService.search(search, page, size, sort);
+        Long companyId = authHelper.hasAnyRole(currentUser, "ADMIN") ? null : authHelper.getCurrentCompanyId(currentUser);
+        Page<Program> result = programService.search(search, companyId, page, size, sort);
         return ResponseEntity.ok(PaginatedResponse.of(
                 programMapper.toDtoList(result.getContent()),
                 new PaginationInfo(page, size, result.getTotalElements(), result.getTotalPages())
@@ -43,8 +50,14 @@ public class ProgramController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<ApiResponse<ProgramDto>> create(@Valid @RequestBody ProgramDto.CreateRequest request) {
-        Program created = programService.create(request);
+    public ResponseEntity<ApiResponse<ProgramDto>> create(
+            @Valid @RequestBody ProgramDto.CreateRequest request,
+            @AuthenticationPrincipal UserDetails currentUser) {
+        Long companyId = request.companyId();
+        if (companyId == null && !authHelper.hasAnyRole(currentUser, "ADMIN")) {
+            companyId = authHelper.getCurrentCompanyId(currentUser);
+        }
+        Program created = programService.create(request, companyId);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(programMapper.toDto(created)));
     }
 

@@ -1,8 +1,5 @@
 -- Seed data for Jari (idempotent — safe to run on every startup)
 
--- Organization config
-MERGE INTO organization_config (id, name, address, created_at, updated_at) KEY(id) VALUES (1, 'My Organization', '', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-
 -- Default issue types
 MERGE INTO issue_type (id, name) KEY(id) VALUES (1, 'Project Management');
 MERGE INTO issue_type (id, name) KEY(id) VALUES (2, 'Tech Lead');

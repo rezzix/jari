@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { UserDto, AdminUpdateUserRequest } from '@/types';
+import type { UserDto, AdminUpdateUserRequest, CompanyDto } from '@/types';
 import Modal from '@/components/common/Modal';
 import Field from '@/components/common/Field';
 import Spinner from '@/components/common/Spinner';
 import {
   listUsers, createUser, adminUpdateUser, deactivateUser,
 } from '@/api/admin';
+import { listCompanies } from '@/api/companies';
 
 function SpinnerWrapper() {
   return (
@@ -50,6 +51,7 @@ export default function UsersTab() {
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Username</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Email</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Name</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Company</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Role</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Active</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Actions</th>
@@ -61,6 +63,13 @@ export default function UsersTab() {
                   <td className="px-4 py-3 font-mono text-xs">{u.username}</td>
                   <td className="px-4 py-3">{u.email}</td>
                   <td className="px-4 py-3">{u.firstName} {u.lastName}</td>
+                  <td className="px-4 py-3">
+                    {u.companyName ? (
+                      <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">{u.companyName}</span>
+                    ) : (
+                      <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">Global</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
                       u.role === 'ADMIN' ? 'bg-red-100 text-red-700' :
@@ -107,15 +116,21 @@ function CreateUserModal({ onClose }: { onClose: () => void }) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [role, setRole] = useState('CONTRIBUTOR');
+  const [companyId, setCompanyId] = useState<string>('');
+  const [companies, setCompanies] = useState<CompanyDto[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    listCompanies().then((res) => setCompanies(res.data.filter((c) => c.active)));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setError(null);
     try {
-      await createUser({ username, email, password, firstName, lastName, role });
+      await createUser({ username, email, password, firstName, lastName, role, companyId: companyId ? Number(companyId) : null });
       onClose();
     } catch {
       setError('Failed to create user. Check the details and try again.');
@@ -142,7 +157,15 @@ function CreateUserModal({ onClose }: { onClose: () => void }) {
           <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
             <option value="CONTRIBUTOR">Contributor</option>
             <option value="MANAGER">Manager</option>
+            <option value="EXECUTIVE">Executive</option>
             <option value="ADMIN">Admin</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
+          <select value={companyId} onChange={(e) => setCompanyId(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+            <option value="">Global</option>
+            {companies.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.key})</option>)}
           </select>
         </div>
         <div className="flex justify-end gap-3 pt-2">
@@ -162,15 +185,21 @@ function EditUserModal({ user, onClose }: { user: UserDto; onClose: () => void }
   const [lastName, setLastName] = useState(user.lastName);
   const [role, setRole] = useState(user.role);
   const [active, setActive] = useState(user.active);
+  const [companyId, setCompanyId] = useState<string>(user.companyId ? String(user.companyId) : '');
+  const [companies, setCompanies] = useState<CompanyDto[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    listCompanies().then((res) => setCompanies(res.data));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setError(null);
     try {
-      const req: AdminUpdateUserRequest = { email, firstName, lastName, role, active };
+      const req: AdminUpdateUserRequest = { email, firstName, lastName, role, active, companyId: companyId ? Number(companyId) : null };
       await adminUpdateUser(user.id, req);
       onClose();
     } catch {
@@ -191,10 +220,18 @@ function EditUserModal({ user, onClose }: { user: UserDto; onClose: () => void }
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-          <select value={role} onChange={(e) => setRole(e.target.value as 'ADMIN' | 'MANAGER' | 'CONTRIBUTOR')} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+          <select value={role} onChange={(e) => setRole(e.target.value as 'ADMIN' | 'MANAGER' | 'CONTRIBUTOR' | 'EXECUTIVE')} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
             <option value="CONTRIBUTOR">Contributor</option>
             <option value="MANAGER">Manager</option>
+            <option value="EXECUTIVE">Executive</option>
             <option value="ADMIN">Admin</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
+          <select value={companyId} onChange={(e) => setCompanyId(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+            <option value="">Global</option>
+            {companies.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.key})</option>)}
           </select>
         </div>
         <label className="flex items-center gap-2">
