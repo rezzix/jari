@@ -56,6 +56,7 @@ public class ProjectController {
         List<ProjectDto> dtos = projectMapper.toDtoList(result.getContent()).stream()
                 .map(dto -> new ProjectDto(dto.id(), dto.name(), dto.key(), dto.description(),
                         dto.programId(), dto.programName(), dto.managerId(), dto.managerName(),
+                        dto.companyId(), dto.companyName(),
                         dto.stage(), dto.strategicScore(), dto.plannedValue(), dto.budget(), dto.budgetSpent(),
                         dto.targetStartDate(), dto.targetEndDate(),
                         favoriteIds.contains(dto.id()),
@@ -76,6 +77,7 @@ public class ProjectController {
         Set<Long> favoriteIds = projectService.getFavoriteProjectIds(userId);
         ProjectDto enriched = new ProjectDto(dto.id(), dto.name(), dto.key(), dto.description(),
                 dto.programId(), dto.programName(), dto.managerId(), dto.managerName(),
+                dto.companyId(), dto.companyName(),
                 dto.stage(), dto.strategicScore(), dto.plannedValue(), dto.budget(), dto.budgetSpent(),
                 dto.targetStartDate(), dto.targetEndDate(),
                 favoriteIds.contains(dto.id()),

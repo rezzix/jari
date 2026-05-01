@@ -6,13 +6,16 @@ import jakarta.validation.constraints.Size;
 
 public record ProgramDto(
         Long id, String name, String key, String description,
-        Long managerId, String managerName, String createdAt, String updatedAt
+        Long managerId, String managerName,
+        Long companyId, String companyName,
+        String createdAt, String updatedAt
 ) {
     public record CreateRequest(
             @NotBlank @Size(min = 1, max = 255) String name,
             @NotBlank @Size(min = 1, max = 10) String key,
             String description,
-            @NotNull Long managerId
+            @NotNull Long managerId,
+            Long companyId
     ) {}
 
     public record UpdateRequest(

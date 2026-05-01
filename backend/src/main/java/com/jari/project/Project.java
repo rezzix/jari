@@ -1,5 +1,6 @@
 package com.jari.project;
 
+import com.jari.company.Company;
 import com.jari.program.Program;
 import com.jari.user.User;
 import jakarta.persistence.*;
@@ -34,6 +35,10 @@ public class Project {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "manager_id", nullable = false)
     private User manager;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -92,6 +97,8 @@ public class Project {
     public void setTargetStartDate(LocalDate targetStartDate) { this.targetStartDate = targetStartDate; }
     public LocalDate getTargetEndDate() { return targetEndDate; }
     public void setTargetEndDate(LocalDate targetEndDate) { this.targetEndDate = targetEndDate; }
+    public Company getCompany() { return company; }
+    public void setCompany(Company company) { this.company = company; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 

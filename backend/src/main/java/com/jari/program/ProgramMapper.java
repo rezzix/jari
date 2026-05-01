@@ -10,6 +10,8 @@ public interface ProgramMapper {
 
     @Mapping(target = "managerId", source = "manager.id")
     @Mapping(target = "managerName", source = "manager.firstName")
+    @Mapping(target = "companyId", source = "company.id")
+    @Mapping(target = "companyName", source = "company.name")
     @Mapping(target = "createdAt", source = "createdAt", dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'")
     @Mapping(target = "updatedAt", source = "updatedAt", dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'")
     ProgramDto toDto(Program program);

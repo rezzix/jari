@@ -13,6 +13,8 @@ public record UserDto(
         String role,
         String avatarUrl,
         boolean active,
+        Long companyId,
+        String companyName,
         String createdAt,
         String updatedAt
 ) {
@@ -23,7 +25,8 @@ public record UserDto(
             @NotBlank @Size(min = 6) String password,
             @NotBlank @Size(min = 1, max = 100) String firstName,
             @NotBlank @Size(min = 1, max = 100) String lastName,
-            @NotBlank String role
+            @NotBlank String role,
+            Long companyId
     ) {}
 
     public record UpdateRequest(
@@ -31,7 +34,8 @@ public record UserDto(
             String firstName,
             String lastName,
             String role,
-            Boolean active
+            Boolean active,
+            Long companyId
     ) {}
 
     public record PasswordChangeRequest(

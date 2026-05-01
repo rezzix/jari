@@ -28,10 +28,14 @@ public class CustomUserDetailsService implements UserDetailsService {
             throw new UsernameNotFoundException("User is deactivated: " + username);
         }
 
-        return new org.springframework.security.core.userdetails.User(
-                user.getId().toString(),
+        Long companyId = user.getCompany() != null ? user.getCompany().getId() : null;
+
+        return new CustomUserDetails(
+                user.getId(),
+                user.getUsername(),
                 user.getPasswordHash(),
-                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())),
+                companyId
         );
     }
 }

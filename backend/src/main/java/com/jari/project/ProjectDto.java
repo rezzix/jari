@@ -9,6 +9,7 @@ public record ProjectDto(
         Long id, String name, String key, String description,
         Long programId, String programName,
         Long managerId, String managerName,
+        Long companyId, String companyName,
         String stage, Integer strategicScore,
         String plannedValue, String budget, String budgetSpent,
         String targetStartDate, String targetEndDate,
@@ -27,7 +28,8 @@ public record ProjectDto(
             String plannedValue,
             String budget,
             String targetStartDate,
-            String targetEndDate
+            String targetEndDate,
+            Long companyId
     ) {}
 
     public record UpdateRequest(

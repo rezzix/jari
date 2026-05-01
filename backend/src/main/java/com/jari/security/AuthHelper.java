@@ -1,8 +1,10 @@
 package com.jari.security;
 
 import com.jari.common.exception.ForbiddenException;
+import com.jari.project.Project;
 import com.jari.project.ProjectService;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.jari.user.User;
+import com.jari.user.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -10,13 +12,29 @@ import org.springframework.stereotype.Component;
 public class AuthHelper {
 
     private final ProjectService projectService;
+    private final UserRepository userRepository;
 
-    public AuthHelper(ProjectService projectService) {
+    public AuthHelper(ProjectService projectService, UserRepository userRepository) {
         this.projectService = projectService;
+        this.userRepository = userRepository;
     }
 
     public Long getCurrentUserId(UserDetails currentUser) {
+        if (currentUser instanceof CustomUserDetails details) {
+            return details.getUserId();
+        }
         return Long.parseLong(currentUser.getUsername());
+    }
+
+    public Long getCurrentCompanyId(UserDetails currentUser) {
+        if (currentUser instanceof CustomUserDetails details) {
+            return details.getCompanyId();
+        }
+        return null;
+    }
+
+    public boolean isGlobalUser(UserDetails currentUser) {
+        return getCurrentCompanyId(currentUser) == null;
     }
 
     public boolean hasAnyRole(UserDetails currentUser, String... roles) {
@@ -29,8 +47,29 @@ public class AuthHelper {
         return false;
     }
 
+    public boolean canAccessProject(UserDetails currentUser, Project project) {
+        if (hasAnyRole(currentUser, "ADMIN")) return true;
+        if (project.getCompany() == null) return true;
+        Long userCompanyId = getCurrentCompanyId(currentUser);
+        if (userCompanyId == null) return true;
+        return project.getCompany().getId().equals(userCompanyId);
+    }
+
+    public boolean canAccessUser(UserDetails currentUser, User targetUser) {
+        if (hasAnyRole(currentUser, "ADMIN")) return true;
+        Long userCompanyId = getCurrentCompanyId(currentUser);
+        if (userCompanyId == null) return true;
+        return targetUser.getCompany() == null ||
+                targetUser.getCompany().getId().equals(userCompanyId);
+    }
+
     public void requireProjectReadAccess(UserDetails currentUser, Long projectId) {
-        if (hasAnyRole(currentUser, "ADMIN", "MANAGER", "EXECUTIVE")) return;
+        if (hasAnyRole(currentUser, "ADMIN")) return;
+        Project project = projectService.getById(projectId);
+        if (!canAccessProject(currentUser, project)) {
+            throw new ForbiddenException("You do not have access to this project");
+        }
+        if (hasAnyRole(currentUser, "MANAGER", "EXECUTIVE")) return;
         Long userId = getCurrentUserId(currentUser);
         if (!projectService.isMember(projectId, userId)) {
             throw new ForbiddenException("You do not have access to this project");
@@ -38,7 +77,12 @@ public class AuthHelper {
     }
 
     public void requireProjectMemberOrAdminManager(UserDetails currentUser, Long projectId) {
-        if (hasAnyRole(currentUser, "ADMIN", "MANAGER")) return;
+        if (hasAnyRole(currentUser, "ADMIN")) return;
+        Project project = projectService.getById(projectId);
+        if (!canAccessProject(currentUser, project)) {
+            throw new ForbiddenException("You do not have access to this project");
+        }
+        if (hasAnyRole(currentUser, "MANAGER")) return;
         Long userId = getCurrentUserId(currentUser);
         if (!projectService.isMember(projectId, userId)) {
             throw new ForbiddenException("You do not have access to this project");
@@ -50,6 +94,15 @@ public class AuthHelper {
         Long userId = getCurrentUserId(currentUser);
         if (!userId.equals(targetUserId)) {
             throw new ForbiddenException("You can only modify your own data");
+        }
+    }
+
+    public void requireCompanyAccessToUser(UserDetails currentUser, Long targetUserId) {
+        if (hasAnyRole(currentUser, "ADMIN")) return;
+        User targetUser = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new com.jari.common.exception.EntityNotFoundException("User", targetUserId));
+        if (!canAccessUser(currentUser, targetUser)) {
+            throw new ForbiddenException("You do not have access to this user");
         }
     }
 }
