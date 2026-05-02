@@ -66,7 +66,8 @@ export function stageBadge(stage: string | null): string {
   }
 }
 
-export function stageLabel(stage: string): string {
+export function stageLabel(stage: string | null): string {
+  if (!stage) return '—';
   return stage.charAt(0) + stage.slice(1).toLowerCase();
 }
 
@@ -94,6 +95,24 @@ export function eviColor(value: number): string {
   if (value >= 1) return 'text-green-600';
   if (value >= 0.9) return 'text-yellow-600';
   return 'text-red-600';
+}
+
+export function deliverableStateBadge(state: string): string {
+  switch (state) {
+    case 'DRAFT': return 'bg-gray-100 text-gray-800';
+    case 'DELIVERED': return 'bg-blue-100 text-blue-800';
+    case 'VALIDATED': return 'bg-green-100 text-green-800';
+    default: return 'bg-gray-100 text-gray-600';
+  }
+}
+
+export function deliverableStateLabel(state: string): string {
+  switch (state) {
+    case 'DRAFT': return 'Draft';
+    case 'DELIVERED': return 'Delivered';
+    case 'VALIDATED': return 'Validated';
+    default: return state;
+  }
 }
 
 export function formatCurrency(value: number | null | undefined): string {

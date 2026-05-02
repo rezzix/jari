@@ -7,6 +7,7 @@ import { getComments, addComment } from '@/api/issues';
 import { listTimeLogs, createTimeLog, deleteTimeLog } from '@/api/timeLogs';
 import { listIssueStatuses, listIssueTypes } from '@/api/admin';
 import { priorityColor, statusColor, formatDate } from '@/utils/format';
+import { useAuth } from '@/hooks/useAuth';
 import Spinner from '@/components/common/Spinner';
 
 export default function IssueDetailPage() {
@@ -34,6 +35,10 @@ export default function IssueDetailPage() {
   // Save state
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { user } = useAuth();
+  const isExternal = user?.role === 'EXTERNAL';
+  const canEditIssue = !isExternal || (issue?.external && (issue.reporterId === user?.id || issue.assigneeId === user?.id));
 
   const fetchIssue = useCallback(async () => {
     if (!projectId || !issueId) return;
@@ -104,6 +109,7 @@ export default function IssueDetailPage() {
         {!editing ? (
           <>
             <h2 className="text-2xl font-bold text-gray-900">{issue.title}</h2>
+            {issue.external && <span className="ml-2 inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-700">External</span>}
             <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusColor(issue.statusName)}`}>{issue.statusName}</span>
             <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${priorityColor(issue.priority)}`}>{issue.priority}</span>
           </>
@@ -112,7 +118,7 @@ export default function IssueDetailPage() {
         )}
         <div className="ml-auto">
           {!editing ? (
-            <button onClick={() => setEditing(true)} className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700">Edit</button>
+            canEditIssue && <button onClick={() => setEditing(true)} className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700">Edit</button>
           ) : (
             <div className="flex gap-2">
               <button onClick={() => setEditing(false)} className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100">Cancel</button>
@@ -142,8 +148,8 @@ export default function IssueDetailPage() {
           {/* Comments */}
           <CommentsSection projectId={Number(projectId)} issueId={Number(issueId)} />
 
-          {/* Time Logs */}
-          <TimeLogsSection projectId={Number(projectId)} issueId={Number(issueId)} />
+          {/* Time Logs - hidden for external users */}
+          {!isExternal && <TimeLogsSection projectId={Number(projectId)} issueId={Number(issueId)} />}
         </div>
 
         {/* Sidebar */}
@@ -184,6 +190,8 @@ export default function IssueDetailPage() {
                     <option value="LOW">Low</option>
                   </select>
                 </div>
+                {!isExternal && (
+                <>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                   <select value={typeId} onChange={(e) => setTypeId(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
@@ -208,6 +216,8 @@ export default function IssueDetailPage() {
                     ))}
                   </div>
                 </div>
+                </>
+                )}
               </>
             )}
           </div>

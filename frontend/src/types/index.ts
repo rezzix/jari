@@ -9,4 +9,5 @@ export type { SprintDto, CreateSprintRequest, UpdateSprintRequest } from './spri
 export type { TimeLogDto, CreateTimeLogRequest, UpdateTimeLogRequest } from './timeLog';
 export type { WikiPageDto, WikiTreeItem, CreateWikiPageRequest, UpdateWikiPageRequest, WikiSearchHit } from './wiki';
 export type { RaidItemDto, CreateRaidItemRequest, UpdateRaidItemRequest, EvmMetrics, PortfolioSummary, UserRateDto } from './pmo';
+export type { PhaseDto, CreatePhaseRequest, UpdatePhaseRequest, DeliverableDto, CreateDeliverableRequest, UpdateDeliverableRequest } from './phase';
 export type { IssueTypeDto, IssueStatusDto, IssueStatusCategory, AuditLogDto, OrganizationUpdateRequest, CreateUserRequest, AdminUpdateUserRequest, CreateIssueTypeRequest, CreateIssueStatusRequest } from './admin';

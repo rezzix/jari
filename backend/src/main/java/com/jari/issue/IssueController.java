@@ -4,6 +4,7 @@ import com.jari.attachment.AttachmentService;
 import com.jari.common.dto.ApiResponse;
 import com.jari.common.dto.PaginatedResponse;
 import com.jari.common.dto.PaginatedResponse.PaginationInfo;
+import com.jari.common.exception.ForbiddenException;
 import com.jari.security.AuthHelper;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -44,14 +45,18 @@ public class IssueController {
             @RequestParam(required = false) Long labelId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Instant createdAfter,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Instant createdBefore,
+            @RequestParam(required = false) Boolean external,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt,desc") String sort,
             @AuthenticationPrincipal UserDetails currentUser) {
 
         authHelper.requireProjectReadAccess(currentUser, projectId);
+        if (authHelper.isExternal(currentUser)) {
+            external = true;
+        }
         Page<Issue> result = issueService.search(projectId, search, statusId, assigneeId, typeId,
-                priority, sprintId, labelId, createdAfter, createdBefore, page, size, sort);
+                priority, sprintId, labelId, createdAfter, createdBefore, external, page, size, sort);
         return ResponseEntity.ok(PaginatedResponse.of(
                 issueMapper.toDtoList(result.getContent()),
                 new PaginationInfo(page, size, result.getTotalElements(), result.getTotalPages())
@@ -63,7 +68,11 @@ public class IssueController {
             @PathVariable Long projectId, @PathVariable Long issueId,
             @AuthenticationPrincipal UserDetails currentUser) {
         authHelper.requireProjectReadAccess(currentUser, projectId);
-        return ResponseEntity.ok(ApiResponse.of(issueMapper.toDto(issueService.getById(issueId))));
+        Issue issue = issueService.getById(issueId);
+        if (authHelper.isExternal(currentUser) && !issue.isExternal()) {
+            throw new ForbiddenException("You do not have access to this issue");
+        }
+        return ResponseEntity.ok(ApiResponse.of(issueMapper.toDto(issue)));
     }
 
     @PostMapping
@@ -73,6 +82,10 @@ public class IssueController {
             @AuthenticationPrincipal UserDetails currentUser) {
         authHelper.requireProjectMemberOrAdminManager(currentUser, projectId);
         Long userId = authHelper.getCurrentUserId(currentUser);
+        if (authHelper.isExternal(currentUser)) {
+            request = new IssueDto.CreateRequest(request.title(), request.description(),
+                    request.priority(), request.typeId(), request.assigneeId(), request.labelIds(), true);
+        }
         Issue created = issueService.create(projectId, request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(issueMapper.toDto(created)));
     }
@@ -83,6 +96,17 @@ public class IssueController {
             @RequestBody IssueDto.UpdateRequest request,
             @AuthenticationPrincipal UserDetails currentUser) {
         authHelper.requireProjectMemberOrAdminManager(currentUser, projectId);
+        if (authHelper.isExternal(currentUser)) {
+            Issue issue = issueService.getById(issueId);
+            if (!issue.isExternal()) {
+                throw new ForbiddenException("You can only edit external issues");
+            }
+            Long userId = authHelper.getCurrentUserId(currentUser);
+            if (!issue.getReporter().getId().equals(userId) &&
+                    !(issue.getAssignee() != null && issue.getAssignee().getId().equals(userId))) {
+                throw new ForbiddenException("You can only edit your own external issues");
+            }
+        }
         Issue updated = issueService.update(issueId, request);
         return ResponseEntity.ok(ApiResponse.of(issueMapper.toDto(updated)));
     }
@@ -100,6 +124,17 @@ public class IssueController {
             @RequestBody IssueDto.PositionRequest request,
             @AuthenticationPrincipal UserDetails currentUser) {
         authHelper.requireProjectMemberOrAdminManager(currentUser, projectId);
+        if (authHelper.isExternal(currentUser)) {
+            Issue issue = issueService.getById(issueId);
+            if (!issue.isExternal()) {
+                throw new ForbiddenException("You can only move external issues");
+            }
+            Long userId = authHelper.getCurrentUserId(currentUser);
+            if (!issue.getReporter().getId().equals(userId) &&
+                    !(issue.getAssignee() != null && issue.getAssignee().getId().equals(userId))) {
+                throw new ForbiddenException("You can only move your own external issues");
+            }
+        }
         Issue updated = issueService.updatePosition(issueId, request);
         return ResponseEntity.ok(ApiResponse.of(issueMapper.toDto(updated)));
     }
@@ -119,6 +154,12 @@ public class IssueController {
             @Valid @RequestBody IssueDto.CommentDto.CreateRequest request,
             @AuthenticationPrincipal UserDetails currentUser) {
         authHelper.requireProjectMemberOrAdminManager(currentUser, projectId);
+        if (authHelper.isExternal(currentUser)) {
+            Issue issue = issueService.getById(issueId);
+            if (!issue.isExternal()) {
+                throw new ForbiddenException("You can only comment on external issues");
+            }
+        }
         Long userId = authHelper.getCurrentUserId(currentUser);
         Comment comment = issueService.addComment(issueId, request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(issueMapper.toCommentDto(comment)));

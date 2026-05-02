@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 
-type Role = 'ADMIN' | 'MANAGER' | 'EXECUTIVE' | 'CONTRIBUTOR';
+type Role = 'ADMIN' | 'MANAGER' | 'EXECUTIVE' | 'CONTRIBUTOR' | 'EXTERNAL';
 
 interface RoleGuardProps {
   roles: Role[];

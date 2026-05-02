@@ -13,6 +13,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/programs")
 public class ProgramController {
@@ -30,15 +32,22 @@ public class ProgramController {
     @GetMapping
     public ResponseEntity<PaginatedResponse<ProgramDto>> list(
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) Long managedBy,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt,desc") String sort,
             @AuthenticationPrincipal UserDetails currentUser) {
 
-        Long companyId = authHelper.hasAnyRole(currentUser, "ADMIN") ? null : authHelper.getCurrentCompanyId(currentUser);
-        Page<Program> result = programService.search(search, companyId, page, size, sort);
+        Page<Program> result;
+        if (managedBy != null) {
+            result = programService.searchManaged(managedBy, search, page, size, sort);
+        } else {
+            Long companyId = authHelper.hasAnyRole(currentUser, "ADMIN") ? null : authHelper.getCurrentCompanyId(currentUser);
+            result = programService.search(search, companyId, page, size, sort);
+        }
+        List<ProgramDto> dtos = programService.enrichWithProjectCount(programMapper.toDtoList(result.getContent()));
         return ResponseEntity.ok(PaginatedResponse.of(
-                programMapper.toDtoList(result.getContent()),
+                dtos,
                 new PaginationInfo(page, size, result.getTotalElements(), result.getTotalPages())
         ));
     }

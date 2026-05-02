@@ -12,7 +12,7 @@ public record IssueDto(
         Long projectId, String projectKey,
         Long assigneeId, String assigneeName,
         Long reporterId, String reporterName,
-        Long sprintId, int position,
+        Long sprintId, int position, boolean external,
         List<Long> labelIds, List<String> labelNames,
         String createdAt, String updatedAt
 ) {
@@ -22,13 +22,14 @@ public record IssueDto(
             @NotBlank String priority,
             @NotNull Long typeId,
             Long assigneeId,
-            List<Long> labelIds
+            List<Long> labelIds,
+            Boolean external
     ) {}
 
     public record UpdateRequest(
             String title, String description, String priority,
             Long typeId, Long assigneeId, Long statusId, Long sprintId,
-            List<Long> labelIds
+            List<Long> labelIds, Boolean external
     ) {}
 
     public record PositionRequest(int position, Long sprintId) {}

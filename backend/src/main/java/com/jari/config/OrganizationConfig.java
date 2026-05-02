@@ -21,6 +21,12 @@ public class OrganizationConfig {
 
     private String address;
 
+    @Column(length = 500)
+    private String website;
+
+    @Column(length = 500)
+    private String logo;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id")
     @JsonIgnore
@@ -41,6 +47,10 @@ public class OrganizationConfig {
     public void setName(String name) { this.name = name; }
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
+    public String getWebsite() { return website; }
+    public void setWebsite(String website) { this.website = website; }
+    public String getLogo() { return logo; }
+    public void setLogo(String logo) { this.logo = logo; }
     public Company getCompany() { return company; }
     public void setCompany(Company company) { this.company = company; }
     public Instant getCreatedAt() { return createdAt; }

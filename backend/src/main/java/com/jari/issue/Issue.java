@@ -64,6 +64,9 @@ public class Issue {
     @Column(nullable = false)
     private int position = 0;
 
+    @Column(name = "external")
+    private Boolean external = false;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "issue_label",
             joinColumns = @JoinColumn(name = "issue_id"),
@@ -103,6 +106,8 @@ public class Issue {
     public void setSprint(Sprint sprint) { this.sprint = sprint; }
     public int getPosition() { return position; }
     public void setPosition(int position) { this.position = position; }
+    public boolean isExternal() { return Boolean.TRUE.equals(external); }
+    public void setExternal(boolean external) { this.external = external; }
     public Set<Label> getLabels() { return labels; }
     public void setLabels(Set<Label> labels) { this.labels = labels; }
     public Instant getCreatedAt() { return createdAt; }

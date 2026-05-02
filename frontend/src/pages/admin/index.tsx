@@ -1,18 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { IssueTypeDto } from '@/types';
+import type { IssueTypeDto, IssueStatusDto, IssueStatusCategory } from '@/types';
 import Field from '@/components/common/Field';
 import Spinner from '@/components/common/Spinner';
 import {
   getOrganization, updateOrganization,
   listIssueTypes, createIssueType, updateIssueType, deleteIssueType,
+  listIssueStatuses, createIssueStatus, updateIssueStatus, deleteIssueStatus,
 } from '@/api/admin';
 import UsersTab from './UsersTab';
 import ProgramsTab from './ProgramsTab';
-import IssueStatusesTab from './StatusesTab';
-import UserRatesTab from './UserRatesTab';
 import CompaniesTab from './CompaniesTab';
+import IssueStatusesTab from './StatusesTab';
 
-type Tab = 'users' | 'programs' | 'companies' | 'organization' | 'issue-types' | 'issue-statuses' | 'user-rates';
+type Tab = 'companies' | 'programs' | 'users' | 'issues' | 'organization';
 
 function SpinnerWrapper() {
   return (
@@ -23,16 +23,14 @@ function SpinnerWrapper() {
 }
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('users');
+  const [activeTab, setActiveTab] = useState<Tab>('companies');
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: 'users', label: 'Users' },
-    { key: 'programs', label: 'Programs' },
     { key: 'companies', label: 'Companies' },
+    { key: 'programs', label: 'Programs' },
+    { key: 'users', label: 'Users' },
+    { key: 'issues', label: 'Issues' },
     { key: 'organization', label: 'Organization' },
-    { key: 'issue-types', label: 'Issue Types' },
-    { key: 'issue-statuses', label: 'Issue Statuses' },
-    { key: 'user-rates', label: 'User Rates' },
   ];
 
   return (
@@ -57,13 +55,11 @@ export default function AdminPage() {
         </nav>
       </div>
 
-      {activeTab === 'users' && <UsersTab />}
-      {activeTab === 'programs' && <ProgramsTab />}
       {activeTab === 'companies' && <CompaniesTab />}
+      {activeTab === 'programs' && <ProgramsTab />}
+      {activeTab === 'users' && <UsersTab />}
+      {activeTab === 'issues' && <IssuesTab />}
       {activeTab === 'organization' && <OrganizationTab />}
-      {activeTab === 'issue-types' && <IssueTypesTab />}
-      {activeTab === 'issue-statuses' && <IssueStatusesTab />}
-      {activeTab === 'user-rates' && <UserRatesTab />}
     </div>
   );
 }
@@ -73,6 +69,8 @@ export default function AdminPage() {
 function OrganizationTab() {
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
+  const [website, setWebsite] = useState('');
+  const [logo, setLogo] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -82,6 +80,8 @@ function OrganizationTab() {
     getOrganization().then((data) => {
       setName(data.name);
       setAddress(data.address ?? '');
+      setWebsite(data.website ?? '');
+      setLogo(data.logo ?? '');
       setLoading(false);
     });
   }, []);
@@ -92,7 +92,7 @@ function OrganizationTab() {
     setMsg(null);
     setError(null);
     try {
-      await updateOrganization({ name, address: address || undefined });
+      await updateOrganization({ name, address: address || undefined, website: website || undefined, logo: logo || undefined });
       setMsg('Organization updated successfully.');
     } catch {
       setError('Failed to update organization.');
@@ -110,6 +110,8 @@ function OrganizationTab() {
         <form onSubmit={handleSave} className="space-y-4">
           <Field label="Organization Name" value={name} onChange={setName} required />
           <Field label="Address" value={address} onChange={setAddress} textarea />
+          <Field label="Website" value={website} onChange={setWebsite} />
+          <Field label="Logo URL" value={logo} onChange={setLogo} />
           {msg && <div className="bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg px-3 py-2">{msg}</div>}
           {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2">{error}</div>}
           <div className="flex justify-end">
@@ -123,9 +125,18 @@ function OrganizationTab() {
   );
 }
 
-// ─── Issue Types Tab ──────────────────────────────────────────────────────────
+// ─── Issues Tab (merged Types + Statuses) ─────────────────────────────────────
 
-function IssueTypesTab() {
+function IssuesTab() {
+  return (
+    <div className="space-y-8">
+      <IssueTypesSection />
+      <IssueStatusesSection />
+    </div>
+  );
+}
+
+function IssueTypesSection() {
   const [types, setTypes] = useState<IssueTypeDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState('');
@@ -165,6 +176,7 @@ function IssueTypesTab() {
 
   return (
     <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-gray-900">Issue Types</h3>
       <div className="bg-white rounded-xl border border-gray-200 p-4">
         <div className="flex gap-3">
           <input
@@ -229,6 +241,15 @@ function IssueTypesTab() {
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+function IssueStatusesSection() {
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-gray-900">Issue Statuses</h3>
+      <IssueStatusesTab />
     </div>
   );
 }

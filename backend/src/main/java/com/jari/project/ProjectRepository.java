@@ -10,6 +10,8 @@ import java.util.List;
 public interface ProjectRepository extends JpaRepository<Project, Long> {
     boolean existsByKey(String key);
 
+    long countByProgramId(Long programId);
+
     @Query("SELECT p FROM Project p WHERE " +
            "(:search IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
            "(:programId IS NULL OR p.program.id = :programId) AND " +

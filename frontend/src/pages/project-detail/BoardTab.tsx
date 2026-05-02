@@ -4,10 +4,12 @@ import type { IssueDto, IssueStatusDto } from '@/types';
 import { listProjectIssues, updateIssue } from '@/api/issues';
 import { listIssueStatuses } from '@/api/admin';
 import { priorityColor, statusColor } from '@/utils/format';
+import { useAuthStore } from '@/stores/authStore';
 import Spinner from '@/components/common/Spinner';
 
-export default function BoardTab({ projectId, projectKey }: { projectId: number; projectKey: string }) {
+export default function BoardTab({ projectId, projectKey, isExternal }: { projectId: number; projectKey: string; isExternal?: boolean }) {
   const navigate = useNavigate();
+  const currentUser = useAuthStore((s) => s.user);
   const [issues, setIssues] = useState<IssueDto[]>([]);
   const [statuses, setStatuses] = useState<IssueStatusDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,7 +120,7 @@ export default function BoardTab({ projectId, projectKey }: { projectId: number;
               {columnIssues.map((issue) => (
                 <div
                   key={issue.id}
-                  draggable
+                  draggable={!isExternal || (issue.external && (issue.reporterId === currentUser?.id || issue.assigneeId === currentUser?.id))}
                   onDragStart={() => handleDragStart(issue.id)}
                   onDragEnd={handleDragEnd}
                   onClick={() => navigate(`/projects/${projectId}/issues/${issue.id}`)}

@@ -8,6 +8,7 @@ public record ProgramDto(
         Long id, String name, String key, String description,
         Long managerId, String managerName,
         Long companyId, String companyName,
+        Long projectCount,
         String createdAt, String updatedAt
 ) {
     public record CreateRequest(

@@ -5,8 +5,11 @@ import com.jari.common.dto.PaginatedResponse;
 import com.jari.common.dto.PaginatedResponse.PaginationInfo;
 import com.jari.common.exception.ForbiddenException;
 import com.jari.security.AuthHelper;
+import com.jari.user.User;
+import com.jari.user.UserRepository;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,11 +28,13 @@ public class ProjectController {
     private final ProjectService projectService;
     private final ProjectMapper projectMapper;
     private final AuthHelper authHelper;
+    private final UserRepository userRepository;
 
-    public ProjectController(ProjectService projectService, ProjectMapper projectMapper, AuthHelper authHelper) {
+    public ProjectController(ProjectService projectService, ProjectMapper projectMapper, AuthHelper authHelper, UserRepository userRepository) {
         this.projectService = projectService;
         this.projectMapper = projectMapper;
         this.authHelper = authHelper;
+        this.userRepository = userRepository;
     }
 
     @GetMapping
@@ -46,9 +51,17 @@ public class ProjectController {
         Long companyId = authHelper.getCurrentCompanyId(currentUser);
         boolean isAdmin = authHelper.hasAnyRole(currentUser, "ADMIN");
         boolean isManagerOrExecutive = authHelper.hasAnyRole(currentUser, "MANAGER", "EXECUTIVE");
+        boolean isExternal = authHelper.isExternal(currentUser);
 
         Page<Project> result;
-        if (isAdmin) {
+        if (isExternal) {
+            User user = userRepository.findById(userId).orElseThrow();
+            if (user.getAssignedProject() != null) {
+                result = new PageImpl<>(List.of(user.getAssignedProject()));
+            } else {
+                result = Page.empty();
+            }
+        } else if (isAdmin) {
             result = projectService.search(search, programId, managerId, null, page, size, sort);
         } else if (isManagerOrExecutive) {
             result = projectService.search(search, programId, managerId, companyId, page, size, sort);

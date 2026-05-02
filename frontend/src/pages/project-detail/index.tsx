@@ -11,12 +11,13 @@ import Field from '@/components/common/Field';
 import IssuesTab from './IssuesTab';
 import BoardTab from './BoardTab';
 import RaidTab from './RaidTab';
+import PhasesTab from './PhasesTab';
 import SettingsTab from './SettingsTab';
 import MembersTab from './MembersTab';
 import LabelsTab from './LabelsTab';
 import MarkdownRenderer from '@/components/common/MarkdownRenderer';
 
-type Tab = 'issues' | 'board' | 'docs' | 'raid' | 'members' | 'labels' | 'settings';
+type Tab = 'issues' | 'board' | 'docs' | 'raid' | 'phases' | 'members' | 'labels' | 'settings';
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +26,7 @@ export default function ProjectDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('issues');
   const { user } = useAuth();
   const canEdit = user?.role === 'ADMIN' || user?.role === 'MANAGER';
+  const isExternal = user?.role === 'EXTERNAL';
 
   useEffect(() => {
     if (!id) return;
@@ -38,10 +40,11 @@ export default function ProjectDetailPage() {
   const tabs: { key: Tab; label: string }[] = [
     { key: 'issues', label: 'Issues' },
     { key: 'board', label: 'Board' },
-    { key: 'docs', label: 'Docs' },
-    { key: 'raid', label: 'RAID' },
-    { key: 'members', label: 'Members' },
-    { key: 'labels', label: 'Labels' },
+    ...(!isExternal ? [{ key: 'docs' as Tab, label: 'Docs' }] : []),
+    ...(!isExternal ? [{ key: 'raid' as Tab, label: 'RAID' }] : []),
+    { key: 'phases', label: 'Phases' },
+    ...(!isExternal ? [{ key: 'members' as Tab, label: 'Members' }] : []),
+    ...(!isExternal ? [{ key: 'labels' as Tab, label: 'Labels' }] : []),
     ...(canEdit ? [{ key: 'settings' as Tab, label: 'Settings' }] : []),
   ];
 
@@ -78,10 +81,11 @@ export default function ProjectDetailPage() {
         </nav>
       </div>
 
-      {activeTab === 'issues' && <IssuesTab projectId={project.id} projectKey={project.key} canEdit={canEdit} />}
-      {activeTab === 'board' && <BoardTab projectId={project.id} projectKey={project.key} />}
+      {activeTab === 'issues' && <IssuesTab projectId={project.id} projectKey={project.key} canEdit={canEdit} isExternal={isExternal} />}
+      {activeTab === 'board' && <BoardTab projectId={project.id} projectKey={project.key} isExternal={isExternal} />}
       {activeTab === 'docs' && <DocsTab projectId={project.id} />}
       {activeTab === 'raid' && <RaidTab projectId={project.id} canEdit={canEdit} />}
+      {activeTab === 'phases' && <PhasesTab projectId={project.id} canEdit={canEdit} />}
       {activeTab === 'settings' && <SettingsTab project={project} onUpdate={(p) => setProject(p)} />}
       {activeTab === 'members' && <MembersTab projectId={project.id} managerId={project.managerId} canEdit={canEdit} />}
       {activeTab === 'labels' && <LabelsTab projectId={project.id} canEdit={canEdit} />}

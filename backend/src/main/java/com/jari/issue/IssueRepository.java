@@ -27,9 +27,11 @@ public interface IssueRepository extends JpaRepository<Issue, Long> {
            "(:sprintId IS NULL OR i.sprint.id = :sprintId) AND " +
            "(:labelId IS NULL OR :labelId IN (SELECT l.id FROM i.labels l)) AND " +
            "(:createdAfter IS NULL OR i.createdAt >= :createdAfter) AND " +
-           "(:createdBefore IS NULL OR i.createdAt <= :createdBefore)")
+           "(:createdBefore IS NULL OR i.createdAt <= :createdBefore) AND " +
+           "(:external IS NULL OR i.external = :external)")
     Page<Issue> search(Long projectId, String search, Long statusId, Long assigneeId, Long typeId,
-                       Issue.Priority priority, Long sprintId, Long labelId, Instant createdAfter, Instant createdBefore, Pageable pageable);
+                       Issue.Priority priority, Long sprintId, Long labelId, Instant createdAfter, Instant createdBefore,
+                       Boolean external, Pageable pageable);
 
     Page<Issue> findByProjectIdAndSprintIdIsNull(Long projectId, Pageable pageable);
 }

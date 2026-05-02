@@ -1,6 +1,7 @@
 package com.jari.user;
 
 import com.jari.company.Company;
+import com.jari.project.Project;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -11,7 +12,7 @@ import java.time.Instant;
 @Table(name = "\"user\"")
 public class User {
 
-    public enum Role { ADMIN, MANAGER, CONTRIBUTOR, EXECUTIVE }
+    public enum Role { ADMIN, MANAGER, CONTRIBUTOR, EXECUTIVE, EXTERNAL }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,6 +47,10 @@ public class User {
     @JoinColumn(name = "company_id")
     private Company company;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_project_id")
+    private Project assignedProject;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -75,6 +80,8 @@ public class User {
     public void setActive(boolean active) { this.active = active; }
     public Company getCompany() { return company; }
     public void setCompany(Company company) { this.company = company; }
+    public Project getAssignedProject() { return assignedProject; }
+    public void setAssignedProject(Project assignedProject) { this.assignedProject = assignedProject; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

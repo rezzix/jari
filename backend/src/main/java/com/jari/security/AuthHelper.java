@@ -1,6 +1,7 @@
 package com.jari.security;
 
 import com.jari.common.exception.ForbiddenException;
+import com.jari.common.exception.EntityNotFoundException;
 import com.jari.project.Project;
 import com.jari.project.ProjectService;
 import com.jari.user.User;
@@ -47,6 +48,10 @@ public class AuthHelper {
         return false;
     }
 
+    public boolean isExternal(UserDetails currentUser) {
+        return hasAnyRole(currentUser, "EXTERNAL");
+    }
+
     public boolean canAccessProject(UserDetails currentUser, Project project) {
         if (hasAnyRole(currentUser, "ADMIN")) return true;
         if (project.getCompany() == null) return true;
@@ -70,6 +75,12 @@ public class AuthHelper {
             throw new ForbiddenException("You do not have access to this project");
         }
         if (hasAnyRole(currentUser, "MANAGER", "EXECUTIVE")) return;
+        if (isExternal(currentUser)) {
+            User user = userRepository.findById(getCurrentUserId(currentUser))
+                    .orElseThrow(() -> new EntityNotFoundException("User", getCurrentUserId(currentUser)));
+            if (user.getAssignedProject() != null && user.getAssignedProject().getId().equals(projectId)) return;
+            throw new ForbiddenException("You do not have access to this project");
+        }
         Long userId = getCurrentUserId(currentUser);
         if (!projectService.isMember(projectId, userId)) {
             throw new ForbiddenException("You do not have access to this project");
@@ -83,6 +94,12 @@ public class AuthHelper {
             throw new ForbiddenException("You do not have access to this project");
         }
         if (hasAnyRole(currentUser, "MANAGER")) return;
+        if (isExternal(currentUser)) {
+            User user = userRepository.findById(getCurrentUserId(currentUser))
+                    .orElseThrow(() -> new EntityNotFoundException("User", getCurrentUserId(currentUser)));
+            if (user.getAssignedProject() != null && user.getAssignedProject().getId().equals(projectId)) return;
+            throw new ForbiddenException("You do not have access to this project");
+        }
         Long userId = getCurrentUserId(currentUser);
         if (!projectService.isMember(projectId, userId)) {
             throw new ForbiddenException("You do not have access to this project");

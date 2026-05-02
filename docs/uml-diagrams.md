@@ -12,6 +12,14 @@ Core entities and their relationships.
 classDiagram
     direction LR
 
+    class Company {
+        +Long id
+        +String name
+        +String key
+        +String description
+        +boolean active
+    }
+
     class OrganizationConfig {
         +Long id
         +String name
@@ -42,6 +50,13 @@ classDiagram
         +String name
         +String key
         +String description
+        +Stage stage
+        +Integer strategicScore
+        +BigDecimal plannedValue
+        +BigDecimal budget
+        +BigDecimal budgetSpent
+        +LocalDate targetStartDate
+        +LocalDate targetEndDate
     }
 
     class ProjectMember {
@@ -130,6 +145,32 @@ classDiagram
         +String newValue
     }
 
+    class RaidItem {
+        +Long id
+        +RaidType type
+        +String title
+        +String description
+        +RaidStatus status
+        +Integer probability
+        +Integer impact
+        +String mitigationPlan
+        +LocalDate dueDate
+    }
+
+    class UserRate {
+        +Long id
+        +BigDecimal hourlyRate
+        +LocalDate effectiveFrom
+    }
+
+    class ProjectFavorite {
+        +Long id
+    }
+
+    Company "1" --> "*" User : employs
+    Company "1" --> "*" Program : owns
+    Company "1" --> "*" Project : owns
+    Company "1" --> "0..1" OrganizationConfig : configures
     OrganizationConfig "1" --> "*" IssueType : defines
     OrganizationConfig "1" --> "*" IssueStatus : defines
     User "1" --> "*" Program : manages
@@ -140,13 +181,17 @@ classDiagram
     User "1" --> "*" Comment : writes
     User "1" --> "*" WikiPage : authors
     User "1" --> "*" Attachment : uploads
+    User "1" --> "*" UserRate : has rates
+    User "1" --> "*" RaidItem : owns
     User "*" --> "*" Project : member of
+    User "*" --> "*" Project : favorite of
     Program "1" --> "*" Project : contains
     Project "1" --> "*" Issue : contains
     Project "1" --> "*" Label : defines
     Project "1" --> "*" Sprint : has
     Project "1" --> "*" BoardColumn : configures
     Project "1" --> "*" WikiPage : contains
+    Project "1" --> "*" RaidItem : has
     Issue --> IssueStatus : has
     Issue --> IssueType : has
     Issue --> Sprint : belongs to
@@ -169,9 +214,16 @@ flowchart TB
     subgraph Admin
         A1[Manage users CRUD]
         A2[Manage organization config]
-        A3[Manage issue types & statuses]
-        A4[Manage programs & projects]
-        A5[All Manager & Contributor actions]
+        A3[Manage companies]
+        A4[Manage issue types & statuses]
+        A5[Manage programs & projects]
+        A6[All Manager & Contributor actions]
+    end
+
+    subgraph Executive
+        E1[View company projects & programs]
+        E2[View company timesheets & reports]
+        E3[Read Kanban boards]
     end
 
     subgraph Manager
@@ -201,7 +253,8 @@ flowchart TB
         S5[Edit own profile]
     end
 
-    A1 & A2 & A3 & A4 --> A5
+    A1 & A2 & A3 & A4 & A5 --> A6
+    E1 & E2 & E3
     M1 & M2 & M3 & M4 & M5 & M6 & M7
     C1 & C2 & C3 & C4 & C5 & C6
     S1 & S2 & S3 & S4 & S5
@@ -252,22 +305,22 @@ sequenceDiagram
     participant Browser
     participant SecurityFilter
     participant AuthController
-    participant UserService
+    participant CustomUserDetailsService
     participant SessionManager
 
     User->>Browser: Enter credentials
     Browser->>AuthController: POST /api/auth/login {username, password}
-    AuthController->>UserService: authenticate(username, password)
-    UserService->>UserService: Verify BCrypt hash
+    AuthController->>CustomUserDetailsService: authenticate(username, password)
+    CustomUserDetailsService->>CustomUserDetailsService: Load user + companyId
     alt Invalid credentials
-        UserService-->>AuthController: throw AuthenticationException
+        CustomUserDetailsService-->>AuthController: throw AuthenticationException
         AuthController-->>Browser: 401 Unauthorized
         Browser-->>User: Show error message
     else Valid credentials
-        UserService-->>AuthController: User entity
+        CustomUserDetailsService-->>AuthController: CustomUserDetails (userId, companyId, authorities)
         AuthController->>SessionManager: createSession(user)
         SessionManager-->>AuthController: JSESSIONID cookie
-        AuthController-->>Browser: 200 OK + user DTO + Set-Cookie
+        AuthController-->>Browser: 200 OK + user DTO (with companyId, companyName) + Set-Cookie
         Browser-->>User: Redirect to dashboard
     end
 
@@ -275,8 +328,8 @@ sequenceDiagram
 
     Browser->>SecurityFilter: GET /api/issues (with JSESSIONID)
     SecurityFilter->>SessionManager: validateSession(JSESSIONID)
-    SessionManager-->>SecurityFilter: Session valid
-    SecurityFilter->>SecurityFilter: Check role permissions
+    SessionManager-->>SecurityFilter: CustomUserDetails (with companyId)
+    SecurityFilter->>SecurityFilter: Check role + company visibility
     SecurityFilter-->>AuthController: Authorized request
     AuthController-->>Browser: 200 OK + data
 ```
@@ -333,11 +386,19 @@ flowchart TB
             SECURITY[SecurityConfig]
             WEBSOCKET[WebSocketConfig]
             CORS[CORS Config]
+            SEEDER[DataSeeder]
         end
 
         subgraph security
             AUTH_FILTER[AuthFilter]
-            RBAC[RoleAuthorization]
+            CUSTOM_DETAILS[CustomUserDetails]
+            AUTH_HELPER[AuthHelper<br/>company visibility]
+        end
+
+        subgraph company
+            CC[CompanyController]
+            CS[CompanyService]
+            CR[CompanyRepository]
         end
 
         subgraph user
@@ -382,6 +443,12 @@ flowchart TB
             WR[WikiPageRepository]
         end
 
+        subgraph pmo
+            RC[RaidItemController]
+            RS[RaidItemService]
+            RR[RaidItemRepository]
+        end
+
         subgraph attachment
             AC[AttachmentController]
             AS[AttachmentService]
@@ -393,6 +460,7 @@ flowchart TB
     AUDIT -.-> IS
     AUDIT -.-> TS
     EXC -.-> IC & TC & WC
+    AUTH_HELPER -.-> PJS & PS & US
 ```
 
 ---

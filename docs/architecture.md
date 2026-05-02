@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-Jari is a single-organization project management system combining issue tracking, time tracking, and project documentation. It is deployed as a single Spring Boot JAR serving both the REST API and the React SPA.
+Jari is a multi-company project management system combining issue tracking, time tracking, project documentation, and PMO capabilities (RAID logs, EVM). It is deployed as a single Spring Boot JAR serving both the REST API and the React SPA.
 
 ---
 
@@ -13,20 +13,23 @@ jari/
 ├── backend/                    # Spring Boot application
 │   └── src/
 │       ├── main/java/com/jari/
-│       │   ├── config/             # Spring configuration (Security, WebSocket, CORS)
-│       │   ├── security/           # Auth filters, session management, RBAC
+│       │   ├── config/             # Spring configuration (Security, WebSocket, CORS, DataSeeder)
+│       │   ├── security/           # Auth filters, session management, RBAC, CustomUserDetails, AuthHelper
 │       │   ├── common/             # Shared: DTOs, exceptions, audit, storage
+│       │   ├── company/            # Company/tenant management module
 │       │   ├── user/               # User management module
 │       │   ├── program/            # Programs module
 │       │   ├── project/            # Projects module
 │       │   ├── issue/              # Issues/Tickets module
 │       │   ├── sprint/             # Sprint & Backlog module
-│       │   ├── timetracking/       # Time tracking module
+│       │   ├── timetracking/       # Time tracking module (includes UserRate)
 │       │   ├── documentation/      # Wiki module
+│       │   ├── pmo/                # PMO module (RAID items)
 │       │   └── attachment/         # File attachment module
 │       └── main/resources/
-│           ├── application-dev.yml     # H2 config
-│           └── application-prod.yml    # Postgres config
+│           ├── application.yml         # H2 dev config
+│           ├── application-prod.yml    # Postgres prod config
+│           └── data.sql                # Schema seed data
 ├── frontend/                   # React + TypeScript SPA
 │   └── src/
 │       ├── api/                # Axios/fetch wrappers per domain
@@ -152,27 +155,29 @@ uiStore          → sidebar state, modals, toasts
 ```
 
 - **Authentication**: Form-based login (`POST /api/auth/login`), session cookie (JSESSIONID).
-- **Authorization**: Role-based access at the endpoint level (`@PreAuthorize`) and service level.
+- **Authorization**: Role-based access at the endpoint level (`@PreAuthorize`) and service level via `AuthHelper`.
+- **Multi-tenancy**: `CustomUserDetails` carries `companyId` (null = global user). `AuthHelper` provides company-scoped visibility checks (`canAccessProject`, `canAccessUser`).
 - **CSRF**: Enabled for browser clients, disabled for API-only clients.
 - **CORS**: Not needed (same-origin — Spring Boot serves the SPA).
 
 ### Role Permissions Matrix
 
-| Action | Admin | Manager | Contributor |
-|--------|-------|---------|-------------|
-| Manage users & organization config | Yes | No | No |
-| Manage issue types & statuses | Yes | No | Read only |
-| Manage programs/projects | Yes | Yes (assigned) | No |
-| Manage sprints & backlog | Yes | Yes (assigned) | Read (assigned) |
-| Configure Kanban board | Yes | Yes (assigned) | Read only |
-| Create/edit issues | Yes | Yes (assigned) | Yes (assigned) |
-| Delete issues | Yes | Yes (assigned) | Reporter only |
-| Log time on issues | Yes | Yes (assigned) | Yes (assigned) |
-| View timesheets | All | Own project members | Own only |
-| Manage wiki pages | Yes | Yes (assigned) | Yes (assigned) |
-| View Kanban board | Yes | Yes (assigned) | Yes (assigned) |
-| Reports | All | Own projects | Own projects |
-| Audit logs | Yes | No | No |
+| Action | Admin | Executive | Manager | Contributor |
+|--------|-------|----------|---------|-------------|
+| Manage users & organization config | Yes | No | No | No |
+| Manage companies | Yes | No | No | No |
+| Manage issue types & statuses | Yes | Read only | No | Read only |
+| Manage programs/projects | Yes | Read own company | Yes (assigned) | No |
+| Manage sprints & backlog | Yes | Read | Yes (assigned) | Read (assigned) |
+| Configure Kanban board | Yes | Read | Yes (assigned) | Read only |
+| Create/edit issues | Yes | Own projects | Yes (assigned) | Yes (assigned) |
+| Delete issues | Yes | No | Yes (assigned) | Reporter only |
+| Log time on issues | Yes | No | Yes (assigned) | Yes (assigned) |
+| View timesheets | All | Own company | Own project members | Own only |
+| Manage wiki pages | Yes | Own projects | Yes (assigned) | Yes (assigned) |
+| View Kanban board | Yes | Own projects | Yes (assigned) | Yes (assigned) |
+| Reports | All | Own company | Own projects | Own projects |
+| Audit logs | Yes | No | No | No |
 
 ---
 
@@ -301,7 +306,7 @@ Response DTO returned → 201 Created
 
 ## 12. API Design Principles
 
-- Top-level resources: `/api/auth`, `/api/users`, `/api/organization`, `/api/issue-types`, `/api/issue-statuses`, `/api/programs`, `/api/projects`, `/api/time-logs`, `/api/timesheets`, `/api/reports`, `/api/audit-logs`, `/api/attachments`
+- Top-level resources: `/api/auth`, `/api/users`, `/api/companies`, `/api/organization`, `/api/issue-types`, `/api/issue-statuses`, `/api/programs`, `/api/projects`, `/api/time-logs`, `/api/timesheets`, `/api/reports`, `/api/audit-logs`, `/api/attachments`
 - Nested resources under projects: `/api/projects/{id}/issues`, `/api/projects/{id}/labels`, `/api/projects/{id}/sprints`, `/api/projects/{id}/backlog`, `/api/projects/{id}/board`, `/api/projects/{id}/wiki/pages`
 - Nested resources under issues: `/api/projects/{projectId}/issues/{issueId}/comments`, `/api/projects/{projectId}/issues/{issueId}/attachments`
 - Pagination on list endpoints: `?page=0&size=20&sort=createdAt,desc`

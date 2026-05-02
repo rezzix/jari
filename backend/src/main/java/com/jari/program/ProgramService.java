@@ -5,6 +5,7 @@ import com.jari.common.exception.EntityNotFoundException;
 import com.jari.common.exception.ForbiddenException;
 import com.jari.company.Company;
 import com.jari.company.CompanyRepository;
+import com.jari.project.ProjectRepository;
 import com.jari.user.User;
 import com.jari.user.UserRepository;
 import org.springframework.data.domain.Page;
@@ -13,17 +14,21 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 public class ProgramService {
 
     private final ProgramRepository programRepository;
     private final UserRepository userRepository;
     private final CompanyRepository companyRepository;
+    private final ProjectRepository projectRepository;
 
-    public ProgramService(ProgramRepository programRepository, UserRepository userRepository, CompanyRepository companyRepository) {
+    public ProgramService(ProgramRepository programRepository, UserRepository userRepository, CompanyRepository companyRepository, ProjectRepository projectRepository) {
         this.programRepository = programRepository;
         this.userRepository = userRepository;
         this.companyRepository = companyRepository;
+        this.projectRepository = projectRepository;
     }
 
     @Transactional(readOnly = true)
@@ -40,6 +45,27 @@ public class ProgramService {
             return programRepository.search(search, pageRequest);
         }
         return programRepository.findAll(pageRequest);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Program> searchManaged(Long managerId, String search, int page, int size, String sort) {
+        Sort.Direction direction = Sort.Direction.fromString(sort.split(",")[1]);
+        PageRequest pageRequest = PageRequest.of(page, size, direction, sort.split(",")[0]);
+        if (search != null && !search.isBlank()) {
+            return programRepository.findByManagerIdWithSearch(managerId, search, pageRequest);
+        }
+        return programRepository.findByManagerId(managerId, pageRequest);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProgramDto> enrichWithProjectCount(List<ProgramDto> dtos) {
+        return dtos.stream().map(dto ->
+                new ProgramDto(dto.id(), dto.name(), dto.key(), dto.description(),
+                        dto.managerId(), dto.managerName(),
+                        dto.companyId(), dto.companyName(),
+                        projectRepository.countByProgramId(dto.id()),
+                        dto.createdAt(), dto.updatedAt())
+        ).toList();
     }
 
     @Transactional(readOnly = true)

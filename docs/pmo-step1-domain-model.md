@@ -4,12 +4,17 @@
 
 | Entity | Key Fields | Relationships |
 |--------|-----------|---------------|
-| **Program** | id, name, key, description, manager(→User), timestamps | No inverse sides |
-| **Project** | id, name, key, description, program(→Program), manager(→User), timestamps | No inverse sides |
-| **User** | id, username, email, passwordHash, firstName, lastName, role(ADMIN/MANAGER/CONTRIBUTOR), active, timestamps | No inverse sides |
-| **Issue** | id, issueKey, title, description, priority, status(→IssueStatus), type(→IssueType), assignee(→User), reporter(→User), project(→Project), sprint(→Sprint), labels, position, timestamps | No inverse sides |
-| **TimeLog** | id, hours(BigDecimal), logDate, description, issue(→Issue), user(→User), timestamps | No inverse sides |
-| **Sprint** | id, name, goal, project(→Project), status(PLANNING/ACTIVE/CLOSED), startDate, endDate, timestamps | No inverse sides |
+| **Company** | id, name, key, description, active, timestamps | Users, programs, projects belong to company (nullable FK = global) |
+| **OrganizationConfig** | id, name, address, company(→Company, nullable), timestamps | Per-company config (null = global default) |
+| **Program** | id, name, key, description, manager(→User), company(→Company, nullable), timestamps | |
+| **Project** | id, name, key, description, program(→Program), manager(→User), company(→Company, nullable), stage, strategicScore, plannedValue, budget, budgetSpent, targetStartDate, targetEndDate, timestamps | |
+| **User** | id, username, email, passwordHash, firstName, lastName, role(ADMIN/MANAGER/CONTRIBUTOR/EXECUTIVE), active, company(→Company, nullable), timestamps | |
+| **Issue** | id, issueKey, title, description, priority, status(→IssueStatus), type(→IssueType), assignee(→User), reporter(→User), project(→Project), sprint(→Sprint), labels, position, timestamps | |
+| **TimeLog** | id, hours(BigDecimal), logDate, description, issue(→Issue), user(→User), timestamps | |
+| **Sprint** | id, name, goal, project(→Project), status(PLANNING/ACTIVE/CLOSED), startDate, endDate, timestamps | |
+| **RaidItem** | id, project(→Project), type(R/A/I/D), title, description, status, probability, impact, mitigationPlan, dependsOnProjectId, owner(→User), dueDate, timestamps | |
+| **UserRate** | id, user(→User), hourlyRate(BigDecimal), effectiveFrom(LocalDate), timestamps | |
+| **ProjectFavorite** | id, user(→User), project(→Project) | |
 
 **Key conventions observed:**
 - All `@ManyToOne` use `FetchType.LAZY`
@@ -18,6 +23,7 @@
 - Timestamps: `@CreationTimestamp` / `@UpdateTimestamp` on `Instant` fields
 - DTOs are Java records with `CreateRequest` / `UpdateRequest` nested records
 - Controllers return `ApiResponse<T>` or `PaginatedResponse<T>`
+- Company FKs are nullable: null = global entity visible to all users
 
 ---
 
@@ -219,6 +225,14 @@ The EVM calculations will be computed on-the-fly in a `PmoService`, not stored:
 classDiagram
     direction TB
 
+    class Company {
+        +Long id
+        +String name
+        +String key
+        +String description
+        +boolean active
+    }
+
     class User {
         +Long id
         +String username
@@ -309,6 +323,9 @@ classDiagram
         +String color
     }
 
+    Company "1" --> "*" User : employs
+    Company "1" --> "*" Program : owns
+    Company "1" --> "*" Project : owns
     User "1" --> "*" UserRate : has rates
     User "1" --> "*" Project : manages
     User "1" --> "*" TimeLog : logs
@@ -355,7 +372,7 @@ classDiagram
 
 ---
 
-## 5. Files to Create/Modify in Step 1
+## 5. Files Created/Modified in Step 1
 
 **New files (4):**
 - `backend/src/main/java/com/jari/pmo/RaidItem.java`
@@ -364,7 +381,9 @@ classDiagram
 - `backend/src/main/java/com/jari/timetracking/UserRate.java`
 
 **Modified files (2):**
-- `backend/src/main/java/com/jari/project/Project.java` — add stage, strategicScore, plannedValue, budget, budgetSpent, targetStartDate, targetEndDate fields + Stage enum
-- `backend/src/main/java/com/jari/user/User.java` — add EXECUTIVE to Role enum
+- `backend/src/main/java/com/jari/project/Project.java` — added stage, strategicScore, plannedValue, budget, budgetSpent, targetStartDate, targetEndDate fields + Stage enum
+- `backend/src/main/java/com/jari/user/User.java` — added EXECUTIVE to Role enum
+
+> **Status:** Implemented. RaidItem, UserRate, Project PMO fields, and EXECUTIVE role are all in the codebase.
 
 I'm delivering this plan for your review. Once validated, I'll proceed to implement the code changes.

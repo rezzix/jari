@@ -7,7 +7,7 @@ import { priorityColor, statusColor, formatDate } from '@/utils/format';
 import Spinner from '@/components/common/Spinner';
 import CreateIssueModal from './CreateIssueModal';
 
-export default function IssuesTab({ projectId, projectKey, canEdit }: { projectId: number; projectKey: string; canEdit: boolean }) {
+export default function IssuesTab({ projectId, projectKey, canEdit, isExternal }: { projectId: number; projectKey: string; canEdit: boolean; isExternal?: boolean })  {
   const [issues, setIssues] = useState<IssueDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -57,9 +57,9 @@ export default function IssuesTab({ projectId, projectKey, canEdit }: { projectI
             <option value="LOW">Low</option>
           </select>
         </div>
-        {canEdit && (
+        {(canEdit || isExternal) && (
           <button onClick={() => setShowCreate(true)} className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 shrink-0">
-            Create Issue
+            {isExternal ? 'Create External Ticket' : 'Create Issue'}
           </button>
         )}
       </div>
@@ -86,7 +86,10 @@ export default function IssuesTab({ projectId, projectKey, canEdit }: { projectI
                   onClick={() => navigate(`/projects/${projectId}/issues/${issue.id}`)}
                 >
                   <td className="px-4 py-3 font-mono text-xs text-primary-600">{issue.issueKey}</td>
-                  <td className="px-4 py-3 font-medium text-gray-900">{issue.title}</td>
+                  <td className="px-4 py-3 font-medium text-gray-900">
+                    {issue.title}
+                    {issue.external && <span className="ml-2 inline-block px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-teal-100 text-teal-700">External</span>}
+                  </td>
                   <td className="px-4 py-3"><span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${priorityColor(issue.priority)}`}>{issue.priority}</span></td>
                   <td className="px-4 py-3"><span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusColor(issue.statusName)}`}>{issue.statusName}</span></td>
                   <td className="px-4 py-3 text-gray-500">{issue.assigneeName ?? 'Unassigned'}</td>
@@ -102,7 +105,7 @@ export default function IssuesTab({ projectId, projectKey, canEdit }: { projectI
         </div>
       )}
 
-      {showCreate && <CreateIssueModal projectId={projectId} projectKey={projectKey} onClose={() => { setShowCreate(false); fetchIssues(); }} />}
+      {showCreate && <CreateIssueModal projectId={projectId} projectKey={projectKey} onClose={() => { setShowCreate(false); fetchIssues(); }} isExternal={isExternal} />}
     </div>
   );
 }

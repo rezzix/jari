@@ -122,13 +122,75 @@ Get the currently authenticated user.
 
 ---
 
-## 2. Users
+## 2. Companies
+
+> Admin-only for all operations.
+
+### GET /api/companies
+
+List all companies. **Admin only.**
+
+**Query params:** `page`, `size`, `sort`, `search`, `active`
+
+**Response:** `200 OK`
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "Acme Corp",
+      "key": "ACME",
+      "description": "A technology company",
+      "active": true,
+      "createdAt": "2026-04-24T10:30:00Z",
+      "updatedAt": "2026-04-24T10:30:00Z"
+    }
+  ],
+  "pagination": { ... }
+}
+```
+
+### GET /api/companies/{id}
+
+Get a single company. **Admin only.**
+
+### POST /api/companies
+
+Create a company. **Admin only.**
+
+**Request:**
+```json
+{
+  "name": "Acme Corp",
+  "key": "ACME",
+  "description": "A technology company"
+}
+```
+
+### PUT /api/companies/{id}
+
+Update a company. **Admin only.**
+
+**Request:**
+```json
+{
+  "name": "Acme Corp Updated",
+  "description": "Updated description",
+  "active": true
+}
+```
+
+> Companies are soft-deleted by setting `active = false`. Hard delete is not supported.
+
+---
+
+## 3. Users
 
 > Admin-only for create/update/delete. Users can edit their own profile (see `/api/auth/me`).
 
 ### GET /api/users
 
-List all users. **Admin only.**
+List users. **Admin** sees all. **Manager** sees users in their company + global users.
 
 **Query params:** `page`, `size`, `sort`, `search`, `role`, `active`
 
@@ -143,6 +205,8 @@ List all users. **Admin only.**
       "firstName": "John",
       "lastName": "Doe",
       "role": "MANAGER",
+      "companyId": 1,
+      "companyName": "Acme Corp",
       "active": true,
       "avatarUrl": null,
       "createdAt": "2026-01-15T08:00:00Z",
@@ -169,9 +233,12 @@ Create a user. **Admin only.**
   "password": "initial-password",
   "firstName": "John",
   "lastName": "Doe",
-  "role": "MANAGER"
+  "role": "MANAGER",
+  "companyId": 1
 }
 ```
+
+> `companyId` is optional. null = global user. Only Admin can set any company; others default to their own company.
 
 ### PUT /api/users/{id}
 
@@ -184,6 +251,7 @@ Update user details. **Admin only.**
   "firstName": "John",
   "lastName": "Doe",
   "role": "CONTRIBUTOR",
+  "companyId": 2,
   "active": true
 }
 ```
@@ -210,17 +278,17 @@ Deactivate a user (sets `active = false`). **Admin only.**
 
 ---
 
-## 3. Organization Config
+## 4. Organization Config
 
-> Admin-only endpoints.
+> Returns the config for the user's company (or global config if the user is global). Admin-only for updates.
 
 ### GET /api/organization
 
-Get organization config.
+Get organization config for the current user's company. Falls back to the global config if no company-specific config exists.
 
 ### PUT /api/organization
 
-Update organization config.
+Update organization config. **Admin only.** Creates a company-specific config if none exists.
 
 **Request:**
 ```json
@@ -232,7 +300,7 @@ Update organization config.
 
 ---
 
-## 4. Issue Types & Statuses
+## 5. Issue Types & Statuses
 
 > Admin-only for create/update/delete. All authenticated users can read.
 
@@ -286,13 +354,13 @@ Delete an issue status. **Admin only.** Fails if issues reference this status.
 
 ---
 
-## 5. Programs
+## 6. Programs
 
 > Admin and Manager can create/update. All authenticated users can read.
 
 ### GET /api/programs
 
-List programs. Managers see all. Contributors see programs they belong to via projects.
+List programs. **Admin** sees all. **Manager/Executive** sees programs in their company + global programs. **Contributor** sees programs they belong to via projects.
 
 **Query params:** `page`, `size`, `sort`, `search`
 
@@ -310,9 +378,12 @@ Create a program. **Admin, Manager.**
   "name": "Platform Engineering",
   "key": "PLAT",
   "description": "Platform infrastructure and tooling",
-  "managerId": 2
+  "managerId": 2,
+  "companyId": 1
 }
 ```
+
+> `companyId` is optional. null = global program. Admin can set any company; others default to their own company.
 
 ### PUT /api/programs/{id}
 
@@ -324,13 +395,13 @@ Delete a program. **Admin only.** Fails if projects exist under it.
 
 ---
 
-## 6. Projects
+## 7. Projects
 
-> Admin and Manager can create/update. Users see projects they are members of (or all if Admin/Manager).
+> Admin and Manager can create/update. Users see projects they are members of (or all if Admin/Manager). Company-scoped visibility: company users see projects in their company + global projects they're members of; global users see all.
 
 ### GET /api/projects
 
-List projects. Filtered by membership for Contributors.
+List projects. Filtered by company scope and membership.
 
 **Query params:** `page`, `size`, `sort`, `search`, `programId`, `managerId`
 
@@ -350,11 +421,12 @@ Create a project. **Admin, Manager.**
   "description": "Internal project management system",
   "programId": 1,
   "managerId": 2,
+  "companyId": 1,
   "memberIds": [2, 3, 5]
 }
 ```
 
-> On creation, the manager and listed members are added as project members. A default Kanban board configuration is created using all organization statuses.
+> `companyId` is optional. null = global project. Admin can set any company; others default to their own company. On creation, the manager and listed members are added as project members. A default Kanban board configuration is created using all organization statuses.
 
 ### PUT /api/projects/{id}
 
@@ -385,7 +457,7 @@ Remove a member from a project. **Admin, Manager (if project manager).** Cannot 
 
 ---
 
-## 7. Labels
+## 8. Labels
 
 > Scoped to a project. Admin, Manager, and project members can manage.
 
@@ -415,7 +487,7 @@ Delete a label. Removed from all issues that had it.
 
 ---
 
-## 8. Issues
+## 9. Issues
 
 > Project members can create. Assignee/reporter/managers can edit.
 
@@ -481,7 +553,7 @@ Reorder an issue within a sprint or backlog. Used by Kanban drag-and-drop.
 
 ---
 
-## 9. Comments
+## 10. Comments
 
 > Scoped to an issue. Project members can create.
 
@@ -510,7 +582,7 @@ Delete a comment. **Author, Admin, or Manager.**
 
 ---
 
-## 10. Attachments
+## 11. Attachments
 
 ### POST /api/projects/{projectId}/issues/{issueId}/attachments
 
@@ -547,7 +619,7 @@ Download an attachment file by ID.
 
 ---
 
-## 11. Sprints & Backlog
+## 12. Sprints & Backlog
 
 ### GET /api/projects/{projectId}/sprints
 
@@ -596,7 +668,7 @@ Get all issues not assigned to any sprint (sprintId = null).
 
 ---
 
-## 12. Board Configuration
+## 13. Board Configuration
 
 ### GET /api/projects/{projectId}/board
 
@@ -637,7 +709,7 @@ Replace board column configuration. **Admin, Manager.**
 
 ---
 
-## 13. Time Tracking
+## 14. Time Tracking
 
 ### POST /api/time-logs
 
@@ -676,7 +748,7 @@ Delete a time log. **Author, Admin, or Manager.**
 
 ---
 
-## 14. Timesheets
+## 15. Timesheets
 
 ### GET /api/timesheets/weekly
 
@@ -735,7 +807,7 @@ Get a daily timesheet view.
 
 ---
 
-## 15. Wiki / Documentation
+## 16. Wiki / Documentation
 
 > All endpoints scoped to a project. Project members can read. Project members can create/edit.
 
@@ -832,7 +904,7 @@ Search wiki pages by title and content.
 
 ---
 
-## 16. Reporting
+## 17. Reporting
 
 ### GET /api/reports/time-by-project
 
@@ -884,7 +956,7 @@ Time spent per issue in a date range.
 
 ---
 
-## 17. Audit Log
+## 18. Audit Log
 
 > Admin-only read access.
 
@@ -896,7 +968,7 @@ List audit log entries.
 
 ---
 
-## 18. WebSocket (STOMP)
+## 19. WebSocket (STOMP)
 
 ### Connection
 
@@ -965,20 +1037,23 @@ When an issue is created or deleted:
 
 ## Authorization Summary
 
-| Endpoint Group | Admin | Manager | Contributor |
-|---------------|-------|---------|-------------|
-| Auth (login/logout/me) | Yes | Yes | Yes |
-| Users CRUD | Full | — | Own profile only |
-| Organization config | Full | — | — |
-| Issue types & statuses | Full | — | Read only |
-| Programs | Full | Create/Edit | Read (own) |
-| Projects | Full | Create/Edit own | Read (own) |
-| Issues | Full | Own projects | Own projects |
-| Comments & Attachments | Full | Own projects | Own projects |
-| Sprints & Backlog | Full | Own projects | Read (own) |
-| Board config | Full | Own projects | Read only |
-| Time logs | Full | Own projects | Own logs only |
-| Timesheets | All | Own project members | Own only |
-| Wiki pages | Full | Own projects | Own projects |
-| Reports | Full | Own projects | Own projects |
-| Audit logs | Full | — | — |
+| Endpoint Group | Admin | Executive | Manager | Contributor |
+|---------------|-------|----------|---------|-------------|
+| Auth (login/logout/me) | Yes | Yes | Yes | Yes |
+| Companies | Full | — | — | — |
+| Users CRUD | Full | — | Company scope | Own profile only |
+| Organization config | Full | Read own company | — | — |
+| Issue types & statuses | Full | Read only | — | Read only |
+| Programs | Full | Read own company | Create/Edit own company | Read (own) |
+| Projects | Full | Read own company | Create/Edit own | Read (own) |
+| Issues | Full | Own projects | Own projects | Own projects |
+| Comments & Attachments | Full | Own projects | Own projects | Own projects |
+| Sprints & Backlog | Full | Read | Own projects | Read (own) |
+| Board config | Full | Read | Own projects | Read only |
+| Time logs | Full | Own projects | Own projects | Own logs only |
+| Timesheets | All | Own company | Own project members | Own only |
+| Wiki pages | Full | Own projects | Own projects | Own projects |
+| Reports | Full | Own company | Own projects | Own projects |
+| Audit logs | Full | — | — | — |
+
+> "Own company" = resources in the same company + global resources. "Own projects" = projects the user is a member of.

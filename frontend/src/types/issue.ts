@@ -18,6 +18,7 @@ export interface IssueDto {
   reporterName: string | null;
   sprintId: number | null;
   position: number;
+  external: boolean;
   labelIds: number[];
   labelNames: string[];
   createdAt: string;
@@ -31,6 +32,7 @@ export interface CreateIssueRequest {
   typeId: number;
   assigneeId?: number | null;
   labelIds?: number[];
+  external?: boolean;
 }
 
 export interface UpdateIssueRequest {
@@ -42,6 +44,7 @@ export interface UpdateIssueRequest {
   statusId?: number;
   sprintId?: number | null;
   labelIds?: number[];
+  external?: boolean;
 }
 
 export interface CommentDto {

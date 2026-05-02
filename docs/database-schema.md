@@ -3,7 +3,12 @@
 ## Entity-Relationship Diagram (Textual)
 
 ```
-OrganizationConfig (singleton)
+Company ──1:N──► User (nullable — null = global user)
+        ──1:N──► Program (nullable — null = global program)
+        ──1:N──► Project (nullable — null = global project)
+        ──1:N──► OrganizationConfig (nullable — null = global config)
+
+OrganizationConfig (per-company + global fallback)
        │
        ├──1:N──► IssueType
        ├──1:N──► IssueStatus
@@ -15,7 +20,10 @@ User ──1:N──► Program (as manager)
   │    1:N──► Comment
   │    1:N──► WikiPage (as author)
   │    1:N──► Attachment (as uploader)
+  │    1:N──► UserRate
+  │    1:N──► RaidItem (as owner)
   │    M:N──► Project (as member, via ProjectMember)
+  │    M:N──► Project (as favorite, via ProjectFavorite)
   │
 Program ──1:N──► Project
 Project ──1:N──► Issue
@@ -23,6 +31,7 @@ Project ──1:N──► Issue
          1:N──► Sprint
          1:N──► BoardColumn
          1:N──► WikiPage
+         1:N──► RaidItem
          M:N──► User (via ProjectMember)
 Issue ──1:N──► Comment
       ──1:N──► Attachment
@@ -37,21 +46,40 @@ WikiPage ──1:N──► WikiPage (self-referencing parent)
 
 ## Tables
 
-### 1. organization_config
+### 1. company
 
-Singleton table (single row) holding organization-wide settings managed by the admin.
+Organizations (tenants) within the system. Users, projects, and programs can belong to a company or be "global" (company_id = null).
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | BIGINT | PK, auto-increment | |
+| name | VARCHAR(255) | NOT NULL, UNIQUE | Company name |
+| key | VARCHAR(10) | NOT NULL, UNIQUE | Short identifier (e.g. "ACME") |
+| description | TEXT | | |
+| active | BOOLEAN | NOT NULL, default true | Soft-disable instead of delete |
+| created_at | TIMESTAMP | NOT NULL, default now() | |
+| updated_at | TIMESTAMP | NOT NULL, default now() | |
+
+**Indexes:** `idx_company_key`
+
+---
+
+### 2. organization_config
+
+Per-company settings (plus one global row where company_id = null). Managed by admin.
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
 | id | BIGINT | PK, auto-increment | |
 | name | VARCHAR(255) | NOT NULL | Organization name |
 | address | TEXT | | Organization address |
+| company_id | BIGINT | FK → company(id), nullable | null = global config |
 | created_at | TIMESTAMP | NOT NULL, default now() | |
 | updated_at | TIMESTAMP | NOT NULL, default now() | |
 
 ---
 
-### 2. user
+### 3. user
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
@@ -61,17 +89,18 @@ Singleton table (single row) holding organization-wide settings managed by the a
 | password_hash | VARCHAR(255) | NOT NULL | BCrypt hash |
 | first_name | VARCHAR(100) | NOT NULL | |
 | last_name | VARCHAR(100) | NOT NULL | |
-| role | VARCHAR(20) | NOT NULL, CHECK IN ('ADMIN','MANAGER','CONTRIBUTOR') | |
+| role | VARCHAR(20) | NOT NULL, CHECK IN ('ADMIN','MANAGER','CONTRIBUTOR','EXECUTIVE') | |
 | avatar_url | VARCHAR(500) | | Optional profile picture path |
 | active | BOOLEAN | NOT NULL, default true | Soft-disable instead of delete |
+| company_id | BIGINT | FK → company(id), nullable | null = global user |
 | created_at | TIMESTAMP | NOT NULL, default now() | |
 | updated_at | TIMESTAMP | NOT NULL, default now() | |
 
-**Indexes:** `idx_user_username`, `idx_user_email`, `idx_user_role`
+**Indexes:** `idx_user_username`, `idx_user_email`, `idx_user_role`, `idx_user_company`
 
 ---
 
-### 3. program
+### 4. program
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
@@ -80,14 +109,15 @@ Singleton table (single row) holding organization-wide settings managed by the a
 | key | VARCHAR(10) | NOT NULL, UNIQUE | Short identifier (e.g. "PROG1") |
 | description | TEXT | | |
 | manager_id | BIGINT | FK → user(id), NOT NULL | Program manager |
+| company_id | BIGINT | FK → company(id), nullable | null = global program |
 | created_at | TIMESTAMP | NOT NULL, default now() | |
 | updated_at | TIMESTAMP | NOT NULL, default now() | |
 
-**Indexes:** `idx_program_key`, `idx_program_manager`
+**Indexes:** `idx_program_key`, `idx_program_manager`, `idx_program_company`
 
 ---
 
-### 4. project
+### 5. project
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
@@ -97,14 +127,22 @@ Singleton table (single row) holding organization-wide settings managed by the a
 | description | TEXT | | |
 | program_id | BIGINT | FK → program(id), NOT NULL | Parent program |
 | manager_id | BIGINT | FK → user(id), NOT NULL | Project manager |
+| company_id | BIGINT | FK → company(id), nullable | null = global project |
+| stage | VARCHAR(20) | NOT NULL, default 'INITIATION', CHECK IN ('INITIATION','PLANNING','EXECUTION','CLOSING') | Stage-gate lifecycle |
+| strategic_score | INTEGER | | 1-10 strategic alignment score |
+| planned_value | DECIMAL(12,2) | | Total budget (PV baseline for EVM) |
+| budget | DECIMAL(12,2) | | Approved budget allocation |
+| budget_spent | DECIMAL(12,2) | | Direct non-labor expenses |
+| target_start_date | DATE | | Planned start |
+| target_end_date | DATE | | Planned end |
 | created_at | TIMESTAMP | NOT NULL, default now() | |
 | updated_at | TIMESTAMP | NOT NULL, default now() | |
 
-**Indexes:** `idx_project_key`, `idx_project_program`, `idx_project_manager`
+**Indexes:** `idx_project_key`, `idx_project_program`, `idx_project_manager`, `idx_project_company`
 
 ---
 
-### 5. project_member
+### 6. project_member
 
 Join table for project ↔ user membership.
 
@@ -121,7 +159,7 @@ Join table for project ↔ user membership.
 
 ---
 
-### 6. issue_type
+### 7. issue_type
 
 Organization-level issue types, managed by admin.
 
@@ -134,7 +172,7 @@ Default seed data: Project Management, Tech Lead, Architecture, Development, Dat
 
 ---
 
-### 7. issue_status
+### 8. issue_status
 
 Organization-level statuses, managed by admin.
 
@@ -149,7 +187,7 @@ Default seed data: To Do (TODO), In Progress (IN_PROGRESS), Done (DONE)
 
 ---
 
-### 8. label
+### 9. label
 
 Per-project labels for issue tagging.
 
@@ -164,7 +202,7 @@ Per-project labels for issue tagging.
 
 ---
 
-### 9. issue
+### 10. issue
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
@@ -187,7 +225,7 @@ Per-project labels for issue tagging.
 
 ---
 
-### 10. issue_label
+### 11. issue_label
 
 Join table for issue ↔ label (many-to-many).
 
@@ -200,7 +238,7 @@ Join table for issue ↔ label (many-to-many).
 
 ---
 
-### 11. comment
+### 12. comment
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
@@ -215,7 +253,7 @@ Join table for issue ↔ label (many-to-many).
 
 ---
 
-### 12. attachment
+### 13. attachment
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
@@ -232,7 +270,7 @@ Join table for issue ↔ label (many-to-many).
 
 ---
 
-### 13. sprint
+### 14. sprint
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
@@ -250,7 +288,7 @@ Join table for issue ↔ label (many-to-many).
 
 ---
 
-### 14. board_column
+### 15. board_column
 
 Per-project Kanban board configuration. Maps which statuses appear as columns and their order.
 
@@ -265,7 +303,7 @@ Per-project Kanban board configuration. Maps which statuses appear as columns an
 
 ---
 
-### 15. time_log
+### 16. time_log
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
@@ -282,7 +320,7 @@ Per-project Kanban board configuration. Maps which statuses appear as columns an
 
 ---
 
-### 16. wiki_page
+### 17. wiki_page
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
@@ -303,7 +341,7 @@ Per-project Kanban board configuration. Maps which statuses appear as columns an
 
 ---
 
-### 17. wiki_page_issue_link
+### 18. wiki_page_issue_link
 
 Join table linking wiki pages to issues.
 
@@ -317,7 +355,7 @@ Join table linking wiki pages to issues.
 
 ---
 
-### 18. audit_log
+### 19. audit_log
 
 Tracks changes on issues and time logs.
 
@@ -333,6 +371,66 @@ Tracks changes on issues and time logs.
 | created_at | TIMESTAMP | NOT NULL, default now() | |
 
 **Indexes:** `idx_audit_entity`, `idx_audit_performed_by`, `idx_audit_created_at`
+
+---
+
+### 20. raid_item
+
+Risks, Assumptions, Issues, and Dependencies (RAID log) per project. Uses a 5x5 risk matrix for RISK type items.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | BIGINT | PK, auto-increment | |
+| project_id | BIGINT | FK → project(id), NOT NULL | |
+| type | VARCHAR(20) | NOT NULL, CHECK IN ('RISK','ASSUMPTION','ISSUE','DEPENDENCY') | RAID type |
+| title | VARCHAR(255) | NOT NULL | |
+| description | TEXT | | |
+| status | VARCHAR(20) | NOT NULL, default 'OPEN', CHECK IN ('OPEN','MITIGATING','RESOLVED','CLOSED') | |
+| probability | INTEGER | | 1-5 (only for RISK type) |
+| impact | INTEGER | | 1-5 (only for RISK type) |
+| mitigation_plan | TEXT | | |
+| depends_on_project_id | BIGINT | | For DEPENDENCY type |
+| owner_id | BIGINT | FK → user(id), nullable | Responsible person |
+| due_date | DATE | | |
+| created_at | TIMESTAMP | NOT NULL, default now() | |
+| updated_at | TIMESTAMP | NOT NULL, default now() | |
+
+**Indexes:** `idx_raid_project`, `idx_raid_type`, `idx_raid_status`, `idx_raid_owner`
+
+**Risk score** = `probability * impact` (computed, not stored). Levels: Low (1-4), Medium (5-9), High (10-15), Critical (16-25).
+
+---
+
+### 21. user_rate
+
+Hourly rates per user for time-and-material cost calculation (EVM Actual Cost). Rates can change over time via effective_from.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | BIGINT | PK, auto-increment | |
+| user_id | BIGINT | FK → user(id), NOT NULL | |
+| hourly_rate | DECIMAL(10,2) | NOT NULL | Rate per hour |
+| effective_from | DATE | NOT NULL | Date this rate takes effect |
+| created_at | TIMESTAMP | NOT NULL, default now() | |
+| updated_at | TIMESTAMP | NOT NULL, default now() | |
+
+**Indexes:** `idx_user_rate_user`, `idx_user_rate_effective_from`
+
+---
+
+### 22. project_favorite
+
+Join table for user ↔ project favorites (starred projects in sidebar).
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | BIGINT | PK, auto-increment | |
+| user_id | BIGINT | FK → user(id), NOT NULL | |
+| project_id | BIGINT | FK → project(id), NOT NULL | |
+
+**Unique constraint:** `(user_id, project_id)`
+
+**Indexes:** `idx_project_favorite_user`, `idx_project_favorite_project`
 
 ---
 
@@ -362,17 +460,27 @@ URL-friendly identifiers for wiki pages (e.g., `/projects/JARI/wiki/getting-star
 ### Why `is_default` on `issue_status`?
 When creating a new issue, the system needs to know which status to assign by default. Exactly one status should have `is_default = true`.
 
+### Why nullable `company_id` for multi-tenancy?
+A "shared database, shared schema" approach with application-level filtering. When `company_id` is null, the entity is "global" — visible to all users. When set, only users in the same company (or global users) can see it. This avoids Hibernate filters or thread-local tenant context — service/query layers explicitly apply the visibility rules.
+
+### Why a single `raid_item` table instead of separate Risk/Assumption/Issue/Dependency tables?
+Risks, assumptions, issues, and dependencies share nearly identical structure (title, description, owner, status, dates). The `type` enum distinguishes them, while `probability`/`impact`/`mitigation_plan` are only meaningful for RISK type. This reduces schema complexity and allows a single CRUD API and UI for the RAID log.
+
 ---
 
 ## Default Seed Data
 
-On first startup, the application seeds:
+On first startup, the DataSeeder creates:
 
 | Table | Default Rows |
 |-------|-------------|
-| organization_config | 1 row (name: "My Organization") |
+| company | "Acme Corp" (ACME), "Global Corp" (GCORP) |
+| organization_config | "Jari Global" (company_id=null), "Acme Corp" (ACME), "Global Corp" (GCORP) |
 | issue_type | Project Management, Tech Lead, Architecture, Development, Data Analysis, Testing |
 | issue_status | To Do (TODO, is_default), In Progress (IN_PROGRESS), Done (DONE) |
+| user | admin (ADMIN, global), cto (EXECUTIVE, global), sarah (MANAGER, ACME), alex (CONTRIBUTOR, ACME), maria (CONTRIBUTOR, ACME), diana (MANAGER, GCORP), james (CONTRIBUTOR, GCORP), lee (CONTRIBUTOR, GCORP) |
+
+All user passwords are `password123`.
 
 ---
 
@@ -382,11 +490,16 @@ On first startup, the application seeds:
 |--------|-------|------|--------|
 | user | project (as manager) | RESTRICT | Can't delete a user who manages a project |
 | user | issue (as reporter) | RESTRICT | Can't delete a user who reported issues |
+| company | user | RESTRICT | Can't delete a company that has users (deactivate instead) |
+| company | project | RESTRICT | Can't delete a company that has projects (deactivate instead) |
+| company | program | RESTRICT | Can't delete a company that has programs (deactivate instead) |
 | project | issue | CASCADE | Deleting a project deletes all its issues |
 | project | label | CASCADE | Deleting a project deletes its labels |
 | project | sprint | CASCADE | Deleting a project deletes its sprints |
 | project | wiki_page | CASCADE | Deleting a project deletes its wiki |
 | project | board_column | CASCADE | Deleting a project deletes its board config |
+| project | raid_item | CASCADE | Deleting a project deletes its RAID log |
+| project | project_favorite | CASCADE | Deleting a project removes favorites |
 | issue | comment | CASCADE | Deleting an issue deletes its comments |
 | issue | attachment | CASCADE | Deleting an issue deletes its attachment records (files cleaned up by service) |
 | issue | time_log | CASCADE | Deleting an issue deletes its time logs |

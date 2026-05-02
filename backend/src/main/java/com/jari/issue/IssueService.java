@@ -52,12 +52,13 @@ public class IssueService {
     @Transactional(readOnly = true)
     public Page<Issue> search(Long projectId, String search, Long statusId, Long assigneeId,
                               Long typeId, String priority, Long sprintId, Long labelId,
-                              Instant createdAfter, Instant createdBefore, int page, int size, String sort) {
+                              Instant createdAfter, Instant createdBefore, Boolean external,
+                              int page, int size, String sort) {
         Sort.Direction direction = Sort.Direction.fromString(sort.split(",")[1]);
         PageRequest pageRequest = PageRequest.of(page, size, direction, sort.split(",")[0]);
         return issueRepository.search(projectId, search, statusId, assigneeId, typeId,
                 priority != null ? Issue.Priority.valueOf(priority) : null,
-                sprintId, labelId, createdAfter, createdBefore, pageRequest);
+                sprintId, labelId, createdAfter, createdBefore, external, pageRequest);
     }
 
     @Transactional(readOnly = true)
@@ -105,6 +106,10 @@ public class IssueService {
             }
         }
 
+        if (request.external() != null && request.external()) {
+            issue.setExternal(true);
+        }
+
         return issueRepository.save(issue);
     }
 
@@ -143,6 +148,7 @@ public class IssueService {
                 issue.getLabels().add(label);
             }
         }
+        if (request.external() != null) issue.setExternal(request.external());
 
         return issueRepository.save(issue);
     }

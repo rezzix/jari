@@ -6,6 +6,10 @@ import com.jari.common.exception.EntityNotFoundException;
 import com.jari.common.exception.ForbiddenException;
 import com.jari.company.Company;
 import com.jari.company.CompanyRepository;
+import com.jari.project.Project;
+import com.jari.project.ProjectMember;
+import com.jari.project.ProjectMemberRepository;
+import com.jari.project.ProjectRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -19,11 +23,16 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final CompanyRepository companyRepository;
+    private final ProjectRepository projectRepository;
+    private final ProjectMemberRepository projectMemberRepository;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, CompanyRepository companyRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, CompanyRepository companyRepository,
+                       ProjectRepository projectRepository, ProjectMemberRepository projectMemberRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.companyRepository = companyRepository;
+        this.projectRepository = projectRepository;
+        this.projectMemberRepository = projectMemberRepository;
     }
 
     @Transactional(readOnly = true)
@@ -73,7 +82,22 @@ public class UserService {
                     .orElseThrow(() -> new EntityNotFoundException("Company", request.companyId()));
             user.setCompany(company);
         }
-        return userRepository.save(user);
+        if (request.assignedProjectId() != null) {
+            Project project = projectRepository.findById(request.assignedProjectId())
+                    .orElseThrow(() -> new EntityNotFoundException("Project", request.assignedProjectId()));
+            user.setAssignedProject(project);
+        }
+        user = userRepository.save(user);
+
+        if (user.getAssignedProject() != null && !projectMemberRepository.existsByProjectIdAndUserId(user.getAssignedProject().getId(), user.getId())) {
+            projectMemberRepository.save(new ProjectMember(user.getAssignedProject(), user));
+        }
+
+        if (user.getRole() == User.Role.EXTERNAL && user.getAssignedProject() == null) {
+            throw new BadRequestException("EXTERNAL users must be assigned a project");
+        }
+
+        return user;
     }
 
     @Transactional
@@ -98,6 +122,23 @@ public class UserService {
                         .orElseThrow(() -> new EntityNotFoundException("Company", request.companyId()));
                 user.setCompany(company);
             }
+        }
+        if (request.assignedProjectId() != null) {
+            if (request.assignedProjectId() == 0) {
+                user.setAssignedProject(null);
+            } else {
+                Project project = projectRepository.findById(request.assignedProjectId())
+                        .orElseThrow(() -> new EntityNotFoundException("Project", request.assignedProjectId()));
+                user.setAssignedProject(project);
+                if (!projectMemberRepository.existsByProjectIdAndUserId(project.getId(), user.getId())) {
+                    projectMemberRepository.save(new ProjectMember(project, user));
+                }
+            }
+        }
+
+        User.Role effectiveRole = request.role() != null ? User.Role.valueOf(request.role()) : user.getRole();
+        if (effectiveRole == User.Role.EXTERNAL && user.getAssignedProject() == null) {
+            throw new BadRequestException("EXTERNAL users must be assigned a project");
         }
 
         return userRepository.save(user);

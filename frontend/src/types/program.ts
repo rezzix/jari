@@ -7,6 +7,7 @@ export interface ProgramDto {
   managerName: string;
   companyId: number | null;
   companyName: string | null;
+  projectCount: number;
   createdAt: string;
   updatedAt: string;
 }

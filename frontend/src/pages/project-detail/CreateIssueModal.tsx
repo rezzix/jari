@@ -7,7 +7,7 @@ import Modal from '@/components/common/Modal';
 import Field from '@/components/common/Field';
 import Spinner from '@/components/common/Spinner';
 
-export default function CreateIssueModal({ projectId, projectKey, onClose }: { projectId: number; projectKey: string; onClose: () => void }) {
+export default function CreateIssueModal({ projectId, projectKey, onClose, isExternal }: { projectId: number; projectKey: string; onClose: () => void; isExternal?: boolean }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('MEDIUM');
@@ -42,6 +42,7 @@ export default function CreateIssueModal({ projectId, projectKey, onClose }: { p
         typeId: Number(typeId),
         assigneeId: assigneeId ? Number(assigneeId) : undefined,
         labelIds: selectedLabels.length > 0 ? selectedLabels : undefined,
+        ...(isExternal ? { external: true } : {}),
       });
       onClose();
     } catch {
@@ -56,7 +57,7 @@ export default function CreateIssueModal({ projectId, projectKey, onClose }: { p
   };
 
   return (
-    <Modal title={`${projectKey}: Create Issue`} onClose={onClose}>
+    <Modal title={`${projectKey}: ${isExternal ? 'Create External Ticket' : 'Create Issue'}`} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2">{error}</div>}
         <Field label="Title" value={title} onChange={setTitle} required />

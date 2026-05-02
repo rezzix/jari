@@ -26,6 +26,8 @@ export interface AuditLogDto {
 export interface OrganizationUpdateRequest {
   name: string;
   address?: string;
+  website?: string;
+  logo?: string;
 }
 
 export interface CreateUserRequest {
@@ -36,6 +38,7 @@ export interface CreateUserRequest {
   lastName: string;
   role: string;
   companyId?: number | null;
+  assignedProjectId?: number | null;
 }
 
 export interface AdminUpdateUserRequest {
@@ -45,6 +48,7 @@ export interface AdminUpdateUserRequest {
   role?: string;
   active?: boolean;
   companyId?: number | null;
+  assignedProjectId?: number | null;
 }
 
 export interface CreateIssueTypeRequest {

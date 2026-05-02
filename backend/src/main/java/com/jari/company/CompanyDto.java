@@ -8,6 +8,9 @@ public record CompanyDto(
         String name,
         String key,
         String description,
+        String address,
+        String website,
+        String logo,
         boolean active,
         String createdAt,
         String updatedAt
@@ -15,12 +18,18 @@ public record CompanyDto(
     public record CreateRequest(
             @NotBlank @Size(min = 1, max = 255) String name,
             @NotBlank @Size(min = 1, max = 10) String key,
-            String description
+            String description,
+            String address,
+            String website,
+            String logo
     ) {}
 
     public record UpdateRequest(
             String name,
             String description,
+            String address,
+            String website,
+            String logo,
             Boolean active
     ) {}
 }

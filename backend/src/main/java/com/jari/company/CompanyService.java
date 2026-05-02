@@ -45,6 +45,9 @@ public class CompanyService {
         company.setName(request.name());
         company.setKey(request.key().toUpperCase());
         company.setDescription(request.description());
+        company.setAddress(request.address());
+        company.setWebsite(request.website());
+        company.setLogo(request.logo());
         return companyRepository.save(company);
     }
 
@@ -58,6 +61,9 @@ public class CompanyService {
             company.setName(request.name());
         }
         if (request.description() != null) company.setDescription(request.description());
+        if (request.address() != null) company.setAddress(request.address());
+        if (request.website() != null) company.setWebsite(request.website());
+        if (request.logo() != null) company.setLogo(request.logo());
         if (request.active() != null) company.setActive(request.active());
         return companyRepository.save(company);
     }

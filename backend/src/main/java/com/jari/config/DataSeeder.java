@@ -101,91 +101,107 @@ public class DataSeeder implements CommandLineRunner {
         if (userRepository.count() > 1) return;
 
         // Companies
-        Company acme = createCompany("Acme Corp", "ACME", "Global technology solutions provider");
-        Company gcorp = createCompany("Global Corp", "GCORP", "International consulting firm");
+        Company netopia = createCompany("Netopia", "NTO", "Digital innovation and technology solutions",
+                "123 Innovation Drive, San Francisco, CA 94105", "https://netopia.io", "/logos/netopia.png");
+        Company harmony = createCompany("Harmony", "HRM", "Consulting and organizational development",
+                "456 Strategy Blvd, New York, NY 10001", "https://harmony.consulting", "/logos/harmony.png");
+        Company myteam = createCompany("MyTeam", "MTM", "Team collaboration and productivity tools",
+                "789 Collaboration Ave, Austin, TX 73301", "https://myteam.dev", "/logos/myteam.png");
 
         // Organization configs (per-company + global)
-        createOrgConfig("Jari Global", null);
-        createOrgConfig("Acme Corp", acme);
-        createOrgConfig("Global Corp", gcorp);
+        createOrgConfig("Jari Global", null,
+                "100 Main Street, San Francisco, CA 94102", "https://jari.app", "/logos/jari.png");
+        createOrgConfig("Netopia", netopia,
+                "123 Innovation Drive, San Francisco, CA 94105", "https://netopia.io", "/logos/netopia.png");
+        createOrgConfig("Harmony", harmony,
+                "456 Strategy Blvd, New York, NY 10001", "https://harmony.consulting", "/logos/harmony.png");
+        createOrgConfig("MyTeam", myteam,
+                "789 Collaboration Ave, Austin, TX 73301", "https://myteam.dev", "/logos/myteam.png");
 
         // Users
         User admin = createUser("admin", "admin@jari.com", "Admin", "User", User.Role.ADMIN, null);
-        User pm = createUser("sarah", "sarah@jari.com", "Sarah", "Johnson", User.Role.MANAGER, acme);
-        User dev1 = createUser("alex", "alex@jari.com", "Alex", "Chen", User.Role.CONTRIBUTOR, acme);
-        User dev2 = createUser("maria", "maria@jari.com", "Maria", "Garcia", User.Role.CONTRIBUTOR, acme);
-        User dev3 = createUser("james", "james@jari.com", "James", "Wilson", User.Role.CONTRIBUTOR, gcorp);
-        User dev4 = createUser("lee", "lee@jari.com", "Lee", "Park", User.Role.CONTRIBUTOR, gcorp);
-        User pmGcorp = createUser("diana", "diana@jari.com", "Diana", "Ross", User.Role.MANAGER, gcorp);
-        User executive = createUser("cto", "cto@jari.com", "Robert", "Kim", User.Role.EXECUTIVE, null);
+        User majid = createUser("majid", "majid@jari.com", "Majid", "Hassan", User.Role.MANAGER, netopia);
+        User dev1 = createUser("alex", "alex@jari.com", "Alex", "Chen", User.Role.CONTRIBUTOR, netopia);
+        User dev2 = createUser("maria", "maria@jari.com", "Maria", "Garcia", User.Role.CONTRIBUTOR, netopia);
+        User dev3 = createUser("james", "james@jari.com", "James", "Wilson", User.Role.CONTRIBUTOR, harmony);
+        User dev4 = createUser("lee", "lee@jari.com", "Lee", "Park", User.Role.CONTRIBUTOR, harmony);
+        User pmHarmony = createUser("diana", "diana@jari.com", "Diana", "Ross", User.Role.MANAGER, harmony);
+        User salim = createUser("salim", "salim@jari.com", "Salim", "Al-Rashid", User.Role.EXECUTIVE, null);
+        User bassamat = createUser("bassamat", "bassamat@jari.com", "Bassamat", "Tayeb", User.Role.EXTERNAL, null);
 
         // User rates for EVM
         createUserRate(admin, new BigDecimal("75.00"), LocalDate.of(2025, 1, 1));
-        createUserRate(pm, new BigDecimal("90.00"), LocalDate.of(2025, 1, 1));
+        createUserRate(majid, new BigDecimal("90.00"), LocalDate.of(2025, 1, 1));
         createUserRate(dev1, new BigDecimal("65.00"), LocalDate.of(2025, 1, 1));
         createUserRate(dev2, new BigDecimal("70.00"), LocalDate.of(2025, 1, 1));
         createUserRate(dev3, new BigDecimal("60.00"), LocalDate.of(2025, 1, 1));
         createUserRate(dev4, new BigDecimal("55.00"), LocalDate.of(2025, 1, 1));
-        createUserRate(pmGcorp, new BigDecimal("85.00"), LocalDate.of(2025, 1, 1));
+        createUserRate(pmHarmony, new BigDecimal("85.00"), LocalDate.of(2025, 1, 1));
+
         // Programs
-        Program digitalTransform = createProgram("Digital Transformation", "DX", "Enterprise digital transformation initiative", pm, acme);
-        Program mobilePlatform = createProgram("Mobile Platform", "MOB", "Mobile app platform development", pmGcorp, gcorp);
-        Program globalInit = createProgram("Global Initiative", "GI", "Cross-company strategic initiative", executive, null);
+        Program ehealth = createProgram("eHealth", "EH", "Digital health transformation initiative", majid, netopia);
+        Program mobilePlatform = createProgram("Mobile Platform", "MOB", "Mobile app platform development", pmHarmony, harmony);
+        Program globalInit = createProgram("Global Initiative", "GI", "Cross-company strategic initiative", salim, null);
 
         // Projects with PMO fields
-        Project portal = createProject("Customer Portal", "CP", "Customer-facing self-service portal",
-                digitalTransform, pm, Project.Stage.EXECUTION, 8,
+        Project fse = createProject("FSE", "FSE", "Full Stack Engineering platform",
+                ehealth, majid, Project.Stage.EXECUTION, 8,
                 new BigDecimal("150000"), new BigDecimal("150000"), new BigDecimal("12000"),
-                LocalDate.of(2025, 1, 15), LocalDate.of(2025, 9, 30), acme);
+                LocalDate.of(2025, 1, 15), LocalDate.of(2025, 9, 30), netopia);
 
         Project apiGateway = createProject("API Gateway", "AG", "Central API gateway and service mesh",
-                digitalTransform, pm, Project.Stage.PLANNING, 6,
+                ehealth, majid, Project.Stage.PLANNING, 6,
                 new BigDecimal("80000"), new BigDecimal("80000"), new BigDecimal("3500"),
-                LocalDate.of(2025, 3, 1), LocalDate.of(2025, 12, 15), acme);
+                LocalDate.of(2025, 3, 1), LocalDate.of(2025, 12, 15), netopia);
 
         Project mobileApp = createProject("Mobile App", "MA", "Cross-platform mobile application",
-                mobilePlatform, pmGcorp, Project.Stage.EXECUTION, 7,
+                mobilePlatform, pmHarmony, Project.Stage.EXECUTION, 7,
                 new BigDecimal("200000"), new BigDecimal("200000"), new BigDecimal("45000"),
-                LocalDate.of(2025, 2, 1), LocalDate.of(2025, 10, 31), gcorp);
+                LocalDate.of(2025, 2, 1), LocalDate.of(2025, 10, 31), harmony);
 
         Project infraUpgrade = createProject("Infrastructure Upgrade", "IU", "Cloud infrastructure modernization",
-                globalInit, executive, Project.Stage.INITIATION, 5,
+                globalInit, salim, Project.Stage.INITIATION, 5,
                 new BigDecimal("50000"), new BigDecimal("50000"), BigDecimal.ZERO,
                 LocalDate.of(2025, 6, 1), LocalDate.of(2025, 11, 30), null);
 
-        // Add members (respecting company scope: ACME users to ACME projects, GCORP users to GCORP projects, global to any)
-        addMember(portal, admin);
-        addMember(portal, dev1);
-        addMember(portal, dev2);
+        // Add members
+        addMember(fse, admin);
+        addMember(fse, dev1);
+        addMember(fse, dev2);
         addMember(apiGateway, dev1);
         addMember(apiGateway, admin);
         addMember(mobileApp, dev3);
         addMember(mobileApp, dev4);
-        addMember(mobileApp, pmGcorp);
+        addMember(mobileApp, pmHarmony);
         addMember(mobileApp, admin);
         addMember(infraUpgrade, dev1);
         addMember(infraUpgrade, dev3);
 
+        // External user assigned to FSE
+        bassamat.setAssignedProject(fse);
+        userRepository.save(bassamat);
+        addMember(fse, bassamat);
+
         // Favorites (per-user)
-        addFavorite(admin, portal);
+        addFavorite(admin, fse);
         addFavorite(admin, mobileApp);
 
         // Board columns
         List<IssueStatus> allStatuses = issueStatusRepository.findAll();
-        createBoardColumns(portal, allStatuses);
+        createBoardColumns(fse, allStatuses);
         createBoardColumns(apiGateway, allStatuses);
         createBoardColumns(mobileApp, allStatuses);
         createBoardColumns(infraUpgrade, allStatuses);
 
         // Sprints
-        Sprint sprint1 = createSprint("Sprint 1", "Portal MVP features", portal,
+        Sprint sprint1 = createSprint("Sprint 1", "FSE MVP features", fse,
                 SprintStatus.ACTIVE, LocalDate.of(2025, 4, 1), LocalDate.of(2025, 4, 14));
-        Sprint sprint2 = createSprint("Sprint 2", "Portal enhancements", portal,
+        Sprint sprint2 = createSprint("Sprint 2", "FSE enhancements", fse,
                 SprintStatus.PLANNING, LocalDate.of(2025, 4, 15), LocalDate.of(2025, 4, 28));
         Sprint sprintM1 = createSprint("Mobile Sprint 1", "Core mobile features", mobileApp,
                 SprintStatus.ACTIVE, LocalDate.of(2025, 4, 1), LocalDate.of(2025, 4, 14));
 
-        // Issues for Customer Portal
+        // Issues for FSE
         IssueStatus todo = allStatuses.stream().filter(s -> s.getCategory() == IssueStatus.Category.TODO).findFirst().orElse(allStatuses.get(0));
         IssueStatus inProgress = allStatuses.stream().filter(s -> s.getCategory() == IssueStatus.Category.IN_PROGRESS).findFirst().orElse(allStatuses.get(1));
         IssueStatus done = allStatuses.stream().filter(s -> s.getCategory() == IssueStatus.Category.DONE).findFirst().orElse(allStatuses.get(2));
@@ -193,69 +209,74 @@ public class DataSeeder implements CommandLineRunner {
         IssueType mgmt = issueTypeRepository.findById(1L).orElse(null);
         IssueType test = issueTypeRepository.findById(6L).orElse(null);
 
-        createIssue("CP-1", "User authentication flow", portal, done, Issue.Priority.HIGH, dev, dev1, admin, sprint1, 0);
-        createIssue("CP-2", "Dashboard layout", portal, done, Issue.Priority.HIGH, dev, dev2, admin, sprint1, 1);
-        createIssue("CP-3", "Profile management", portal, inProgress, Issue.Priority.MEDIUM, dev, dev1, admin, sprint1, 2);
-        createIssue("CP-4", "Search functionality", portal, inProgress, Issue.Priority.MEDIUM, dev, dev2, admin, sprint2, 3);
-        createIssue("CP-5", "Notification system", portal, todo, Issue.Priority.LOW, dev, null, admin, sprint2, 4);
-        createIssue("CP-6", "Payment integration", portal, todo, Issue.Priority.HIGH, dev, null, admin, null, 5);
-        createIssue("CP-7", "Analytics reporting", portal, todo, Issue.Priority.MEDIUM, dev, null, pm, null, 6);
+        createIssue("FSE-1", "User authentication flow", fse, done, Issue.Priority.HIGH, dev, dev1, admin, sprint1, 0);
+        createIssue("FSE-2", "Dashboard layout", fse, done, Issue.Priority.HIGH, dev, dev2, admin, sprint1, 1);
+        createIssue("FSE-3", "Profile management", fse, inProgress, Issue.Priority.MEDIUM, dev, dev1, admin, sprint1, 2);
+        createIssue("FSE-4", "Search functionality", fse, inProgress, Issue.Priority.MEDIUM, dev, dev2, admin, sprint2, 3);
+        createIssue("FSE-5", "Notification system", fse, todo, Issue.Priority.LOW, dev, null, admin, sprint2, 4);
+        createIssue("FSE-6", "Payment integration", fse, todo, Issue.Priority.HIGH, dev, null, admin, null, 5);
+        createIssue("FSE-7", "Analytics reporting", fse, todo, Issue.Priority.MEDIUM, dev, null, majid, null, 6);
 
         // Issues for Mobile App
-        createIssue("MA-1", "Login screen", mobileApp, done, Issue.Priority.HIGH, dev, dev3, pmGcorp, sprintM1, 0);
-        createIssue("MA-2", "Navigation framework", mobileApp, done, Issue.Priority.HIGH, dev, dev4, pmGcorp, sprintM1, 1);
-        createIssue("MA-3", "Push notifications", mobileApp, inProgress, Issue.Priority.MEDIUM, dev, dev3, pmGcorp, sprintM1, 2);
-        createIssue("MA-4", "Offline mode", mobileApp, todo, Issue.Priority.HIGH, dev, null, pmGcorp, null, 3);
-        createIssue("MA-5", "Camera integration", mobileApp, todo, Issue.Priority.LOW, dev, null, pmGcorp, null, 4);
+        createIssue("MA-1", "Login screen", mobileApp, done, Issue.Priority.HIGH, dev, dev3, pmHarmony, sprintM1, 0);
+        createIssue("MA-2", "Navigation framework", mobileApp, done, Issue.Priority.HIGH, dev, dev4, pmHarmony, sprintM1, 1);
+        createIssue("MA-3", "Push notifications", mobileApp, inProgress, Issue.Priority.MEDIUM, dev, dev3, pmHarmony, sprintM1, 2);
+        createIssue("MA-4", "Offline mode", mobileApp, todo, Issue.Priority.HIGH, dev, null, pmHarmony, null, 3);
+        createIssue("MA-5", "Camera integration", mobileApp, todo, Issue.Priority.LOW, dev, null, pmHarmony, null, 4);
 
         // Issues for API Gateway
-        createIssue("AG-1", "Rate limiting module", apiGateway, inProgress, Issue.Priority.HIGH, dev, dev1, pm, null, 0);
-        createIssue("AG-2", "Service discovery", apiGateway, todo, Issue.Priority.HIGH, dev, null, pm, null, 1);
-        createIssue("AG-3", "Load balancer config", apiGateway, todo, Issue.Priority.MEDIUM, dev, null, pm, null, 2);
+        createIssue("AG-1", "Rate limiting module", apiGateway, inProgress, Issue.Priority.HIGH, dev, dev1, majid, null, 0);
+        createIssue("AG-2", "Service discovery", apiGateway, todo, Issue.Priority.HIGH, dev, null, majid, null, 1);
+        createIssue("AG-3", "Load balancer config", apiGateway, todo, Issue.Priority.MEDIUM, dev, null, majid, null, 2);
+
+        // External issues (visible only to EXTERNAL users)
+        Issue extIssue = createIssue("FSE-8", "Client feedback on login flow", fse, todo, Issue.Priority.MEDIUM, dev, bassamat, bassamat, null, 7);
+        extIssue.setExternal(true);
+        issueRepository.save(extIssue);
 
         // Labels
-        createLabel(portal, "Frontend", "#3B82F6");
-        createLabel(portal, "Backend", "#10B981");
-        createLabel(portal, "Bug", "#EF4444");
+        createLabel(fse, "Frontend", "#3B82F6");
+        createLabel(fse, "Backend", "#10B981");
+        createLabel(fse, "Bug", "#EF4444");
         createLabel(mobileApp, "iOS", "#8B5CF6");
         createLabel(mobileApp, "Android", "#F59E0B");
 
         // Time logs for EVM (labor cost)
         LocalDate today = LocalDate.now();
-        createTimeLog(portal, "CP-3", dev1, new BigDecimal("6.5"), today.minusDays(4), "Profile API implementation");
-        createTimeLog(portal, "CP-3", dev1, new BigDecimal("4.0"), today.minusDays(3), "Profile validation logic");
-        createTimeLog(portal, "CP-4", dev2, new BigDecimal("7.0"), today.minusDays(3), "Search index setup");
-        createTimeLog(portal, "CP-4", dev2, new BigDecimal("5.0"), today.minusDays(2), "Search UI components");
-        createTimeLog(portal, "CP-1", dev1, new BigDecimal("8.0"), today.minusDays(10), "Auth flow - complete");
-        createTimeLog(portal, "CP-2", dev2, new BigDecimal("7.5"), today.minusDays(9), "Dashboard layout - complete");
+        createTimeLog(fse, "FSE-3", dev1, new BigDecimal("6.5"), today.minusDays(4), "Profile API implementation");
+        createTimeLog(fse, "FSE-3", dev1, new BigDecimal("4.0"), today.minusDays(3), "Profile validation logic");
+        createTimeLog(fse, "FSE-4", dev2, new BigDecimal("7.0"), today.minusDays(3), "Search index setup");
+        createTimeLog(fse, "FSE-4", dev2, new BigDecimal("5.0"), today.minusDays(2), "Search UI components");
+        createTimeLog(fse, "FSE-1", dev1, new BigDecimal("8.0"), today.minusDays(10), "Auth flow - complete");
+        createTimeLog(fse, "FSE-2", dev2, new BigDecimal("7.5"), today.minusDays(9), "Dashboard layout - complete");
         createTimeLog(mobileApp, "MA-3", dev3, new BigDecimal("6.0"), today.minusDays(2), "Push notification backend");
         createTimeLog(mobileApp, "MA-3", dev3, new BigDecimal("5.0"), today.minusDays(1), "Push notification UI");
         createTimeLog(mobileApp, "MA-1", dev3, new BigDecimal("8.0"), today.minusDays(12), "Login screen - complete");
         createTimeLog(mobileApp, "MA-2", dev4, new BigDecimal("7.0"), today.minusDays(11), "Navigation - complete");
 
         // RAID items
-        createRaidItem(portal, RaidItem.RaidType.RISK, "Data breach vulnerability",
+        createRaidItem(fse, RaidItem.RaidType.RISK, "Data breach vulnerability",
                 "Customer PII may be exposed if authentication tokens are compromised",
                 RaidItem.RaidStatus.MITIGATING, 4, 5, "Implement token rotation and encryption at rest",
                 dev1, today.plusMonths(1));
 
-        createRaidItem(portal, RaidItem.RaidType.RISK, "Third-party API downtime",
+        createRaidItem(fse, RaidItem.RaidType.RISK, "Third-party API downtime",
                 "Payment provider API has had 3 outages in the last quarter",
                 RaidItem.RaidStatus.OPEN, 3, 4, "Implement fallback payment provider",
-                pm, today.plusMonths(2));
+                majid, today.plusMonths(2));
 
-        createRaidItem(portal, RaidItem.RaidType.ASSUMPTION, "Customers will adopt self-service portal",
+        createRaidItem(fse, RaidItem.RaidType.ASSUMPTION, "Customers will adopt self-service portal",
                 "Assuming 60% adoption rate within 6 months based on industry benchmarks",
                 RaidItem.RaidStatus.OPEN, null, null, null, null, null);
 
-        createRaidItem(portal, RaidItem.RaidType.DEPENDENCY, "SSO provider integration",
+        createRaidItem(fse, RaidItem.RaidType.DEPENDENCY, "SSO provider integration",
                 "Depends on corporate IT completing SSO setup",
-                RaidItem.RaidStatus.OPEN, null, null, null, pm, today.plusWeeks(2));
+                RaidItem.RaidStatus.OPEN, null, null, null, majid, today.plusWeeks(2));
 
         createRaidItem(mobileApp, RaidItem.RaidType.RISK, "App store rejection",
                 "Apple may reject the app for privacy policy compliance",
                 RaidItem.RaidStatus.OPEN, 3, 5, "Early submission for review and policy alignment",
-                pmGcorp, today.plusMonths(1));
+                pmHarmony, today.plusMonths(1));
 
         createRaidItem(mobileApp, RaidItem.RaidType.ISSUE, "Memory leak on Android",
                 "Android builds showing increasing memory usage over time",
@@ -272,7 +293,7 @@ public class DataSeeder implements CommandLineRunner {
 
         createRaidItem(infraUpgrade, RaidItem.RaidType.DEPENDENCY, "Cloud vendor contract renewal",
                 "Infrastructure upgrade depends on cloud contract renewal",
-                RaidItem.RaidStatus.OPEN, null, null, null, pm, today.plusMonths(2));
+                RaidItem.RaidStatus.OPEN, null, null, null, majid, today.plusMonths(2));
     }
 
     private User createUser(String username, String email, String firstName, String lastName, User.Role role, Company company) {
@@ -288,18 +309,24 @@ public class DataSeeder implements CommandLineRunner {
         return userRepository.save(user);
     }
 
-    private Company createCompany(String name, String key, String description) {
+    private Company createCompany(String name, String key, String description, String address, String website, String logo) {
         Company company = new Company();
         company.setName(name);
         company.setKey(key);
         company.setDescription(description);
+        company.setAddress(address);
+        company.setWebsite(website);
+        company.setLogo(logo);
         company.setActive(true);
         return companyRepository.save(company);
     }
 
-    private OrganizationConfig createOrgConfig(String name, Company company) {
+    private OrganizationConfig createOrgConfig(String name, Company company, String address, String website, String logo) {
         OrganizationConfig config = new OrganizationConfig();
         config.setName(name);
+        config.setAddress(address);
+        config.setWebsite(website);
+        config.setLogo(logo);
         config.setCompany(company);
         return organizationConfigRepository.save(config);
     }

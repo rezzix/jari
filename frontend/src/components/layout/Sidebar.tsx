@@ -17,25 +17,30 @@ export default function Sidebar() {
   };
 
   const role = user?.role;
+  const isExternal = role === 'EXTERNAL';
 
   const sections: NavSection[] = [
     {
       items: [
         { to: '/', label: 'Dashboard', icon: DashboardIcon },
+        ...(role === 'ADMIN' ? [{ to: '/admin', label: 'Admin', icon: AdminIcon }] : []),
         { to: '/projects', label: 'Projects', icon: ProjectsIcon },
+        ...(!isExternal && (role === 'ADMIN' || role === 'MANAGER' || role === 'EXECUTIVE')
+          ? [{ to: '/programs', label: 'Programs', icon: ProgramsIcon }]
+          : []),
       ],
     },
-    {
-      header: 'Time',
+    ...(!isExternal ? [{
+      header: 'Time' as string | undefined,
       items: [
         { to: '/my-time', label: 'My Time', icon: TimeIcon },
         ...(role === 'ADMIN' || role === 'MANAGER'
           ? [{ to: '/timesheets', label: 'Timesheets', icon: TimesheetIcon }]
           : []),
       ],
-    },
-    {
-      header: 'Insights',
+    }] : []),
+    ...(!isExternal ? [{
+      header: 'Insights' as string | undefined,
       items: [
         ...(role === 'ADMIN' || role === 'MANAGER' || role === 'EXECUTIVE'
           ? [
@@ -44,10 +49,7 @@ export default function Sidebar() {
             ]
           : []),
       ],
-    },
-    ...(role === 'ADMIN'
-      ? [{ header: 'System', items: [{ to: '/admin', label: 'Admin', icon: AdminIcon }] }]
-      : []),
+    }] : []),
   ].filter((s) => s.items.length > 0);
 
   return (
@@ -173,6 +175,14 @@ function AdminIcon({ className }: { className?: string }) {
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.297-1.06.562-1.54.375-.68.945-1.28 1.844-1.28.9 0 1.47.6 1.844 1.28.265.48.472 1 .562 1.54.292.025.574.072.84.14.72.18 1.35.51 1.86.94.52.44.9.99 1.15 1.6.25.61.34 1.29.26 1.97-.08.67-.32 1.31-.69 1.87-.37.56-.87 1.03-1.47 1.38.1.57.1 1.16 0 1.73-.1.67-.35 1.3-.74 1.84-.39.54-.9.97-1.5 1.26-.6.29-1.27.43-1.95.41-.68-.02-1.34-.2-1.93-.54l-.22-.13-.22.13c-.59.34-1.25.52-1.93.54-.68.02-1.35-.12-1.95-.41-.6-.29-1.11-.72-1.5-1.26-.39-.54-.64-1.17-.74-1.84-.1-.57-.1-1.16 0-1.73-.6-.35-1.1-.82-1.47-1.38-.37-.56-.61-1.2-.69-1.87-.08-.68.01-1.36.26-1.97.25-.61.63-1.16 1.15-1.6.51-.43 1.14-.76 1.86-.94.266-.068.548-.115.84-.14z" />
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0 0h.008v.008H12v-.008zm0 0H9m3 0h3" />
+    </svg>
+  );
+}
+
+function ProgramsIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 6.878V6a2.25 2.25 0 012.25-2.25h7.5A2.25 2.25 0 0118 6v.878m-12 0c.235-.083.487-.128.75-.128h10.5c.263 0 .515.045.75.128m-12 0A2.25 2.25 0 004.5 9v.878m13.5-3A2.25 2.25 0 0119.5 9v.878m0 0a2.246 2.246 0 00-.75-.128H5.25c-.263 0-.515.045-.75.128m15 0A2.25 2.25 0 0121 12v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6c0-.98.626-1.813 1.5-2.122" />
     </svg>
   );
 }

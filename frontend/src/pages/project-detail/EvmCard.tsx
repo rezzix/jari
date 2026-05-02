@@ -16,7 +16,7 @@ export default function EvmCard({ projectId }: { projectId: number }) {
   if (loading) return <div className="bg-white rounded-xl border border-gray-200 p-6"><Spinner className="h-6 w-6 text-primary-600 mx-auto" /></div>;
   if (!evm) return null;
 
-  const fmt = (v: number) => '$' + v.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  const fmt = (v: number | null) => v != null ? '$' + v.toLocaleString('en-US', { maximumFractionDigits: 0 }) : '—';
   const pct = (v: number) => (v * 100).toFixed(1) + '%';
   const cvColor = evm.costVariance >= 0 ? 'text-green-600' : 'text-red-600';
   const svColor = evm.scheduleVariance >= 0 ? 'text-green-600' : 'text-red-600';

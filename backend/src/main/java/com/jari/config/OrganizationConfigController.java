@@ -25,6 +25,13 @@ public class OrganizationConfigController {
         this.authHelper = authHelper;
     }
 
+    @GetMapping("/public")
+    public ResponseEntity<ApiResponse<OrganizationConfig>> getPublic() {
+        OrganizationConfig config = repository.findByCompanyIdIsNull()
+                .orElse(null);
+        return ResponseEntity.ok(ApiResponse.of(config));
+    }
+
     @GetMapping
     public ResponseEntity<ApiResponse<OrganizationConfig>> get(@AuthenticationPrincipal UserDetails currentUser) {
         Long companyId = authHelper.getCurrentCompanyId(currentUser);
@@ -61,6 +68,8 @@ public class OrganizationConfigController {
         }
         config.setName(updated.getName());
         config.setAddress(updated.getAddress());
+        config.setWebsite(updated.getWebsite());
+        config.setLogo(updated.getLogo());
         return ResponseEntity.ok(ApiResponse.of(repository.save(config)));
     }
 }

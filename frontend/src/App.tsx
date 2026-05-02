@@ -12,6 +12,8 @@ import DashboardPage from '@/pages/DashboardPage';
 import ProfilePage from '@/pages/ProfilePage';
 import AdminPage from '@/pages/admin';
 import ProjectsPage from '@/pages/ProjectsPage';
+import ProgramDetailPage from '@/pages/ProgramDetailPage';
+import ProgramsPage from '@/pages/ProgramsPage';
 import ProjectDetailPage from '@/pages/project-detail';
 import IssueDetailPage from '@/pages/IssueDetailPage';
 import MyTimePage from '@/pages/MyTimePage';
@@ -58,6 +60,8 @@ export default function App() {
           }
         >
           <Route path="/" element={<DashboardPage />} />
+          <Route path="/programs" element={<RoleGuard roles={['ADMIN', 'MANAGER', 'EXECUTIVE']}><ProgramsPage /></RoleGuard>} />
+          <Route path="/programs/:id" element={<RoleGuard roles={['ADMIN', 'MANAGER', 'EXECUTIVE']}><ProgramDetailPage /></RoleGuard>} />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/projects/:id" element={<ProjectDetailPage />} />
           <Route path="/projects/:projectId/issues/:issueId" element={<IssueDetailPage />} />
