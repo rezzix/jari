@@ -102,32 +102,29 @@ public class DataSeeder implements CommandLineRunner {
 
         // Companies
         Company netopia = createCompany("Netopia", "NTO", "Digital innovation and technology solutions",
-                "123 Innovation Drive, San Francisco, CA 94105", "https://netopia.io", "/logos/netopia.png");
+                "123 Innovation Drive, San Francisco, CA 94105", "https://netopia.io", "https://mederp.net/downloads/nemo/netopia.jpg", 1);
         Company harmony = createCompany("Harmony", "HRM", "Consulting and organizational development",
-                "456 Strategy Blvd, New York, NY 10001", "https://harmony.consulting", "/logos/harmony.png");
+                "456 Strategy Blvd, New York, NY 10001", "https://harmony.consulting", "https://mederp.net/downloads/nemo/harmony.jpg", 2);
         Company myteam = createCompany("MyTeam", "MTM", "Team collaboration and productivity tools",
-                "789 Collaboration Ave, Austin, TX 73301", "https://myteam.dev", "/logos/myteam.png");
+                "789 Collaboration Ave, Austin, TX 73301", "https://myteam.dev", "https://mederp.net/downloads/nemo/myteam.jpg", 3);
+        Company mederp = createCompany("medERP", "MER", "Healthcare ERP solutions and medical information systems",
+                "Av Moulay Rachid, Casablanca", "www.mederp.net", "https://mederp.net/downloads/nemo/mederp.jpg", 4);
 
-        // Organization configs (per-company + global)
-        createOrgConfig("Jari Global", null,
-                "100 Main Street, San Francisco, CA 94102", "https://jari.app", "/logos/jari.png");
-        createOrgConfig("Netopia", netopia,
-                "123 Innovation Drive, San Francisco, CA 94105", "https://netopia.io", "/logos/netopia.png");
-        createOrgConfig("Harmony", harmony,
-                "456 Strategy Blvd, New York, NY 10001", "https://harmony.consulting", "/logos/harmony.png");
-        createOrgConfig("MyTeam", myteam,
-                "789 Collaboration Ave, Austin, TX 73301", "https://myteam.dev", "/logos/myteam.png");
+        // Organization config (global only — companies use their own address/website/logo fields)
+        createOrgConfig("Netopia Group", null,
+                "Av Annakhil, Rabat", "www.netopia.ma", "https://mederp.net/downloads/nemo/group.jpg");
 
         // Users
-        User admin = createUser("admin", "admin@jari.com", "Admin", "User", User.Role.ADMIN, null);
-        User majid = createUser("majid", "majid@jari.com", "Majid", "Hassan", User.Role.MANAGER, netopia);
-        User dev1 = createUser("alex", "alex@jari.com", "Alex", "Chen", User.Role.CONTRIBUTOR, netopia);
-        User dev2 = createUser("maria", "maria@jari.com", "Maria", "Garcia", User.Role.CONTRIBUTOR, netopia);
-        User dev3 = createUser("james", "james@jari.com", "James", "Wilson", User.Role.CONTRIBUTOR, harmony);
-        User dev4 = createUser("lee", "lee@jari.com", "Lee", "Park", User.Role.CONTRIBUTOR, harmony);
-        User pmHarmony = createUser("diana", "diana@jari.com", "Diana", "Ross", User.Role.MANAGER, harmony);
-        User salim = createUser("salim", "salim@jari.com", "Salim", "Al-Rashid", User.Role.EXECUTIVE, null);
-        User bassamat = createUser("bassamat", "bassamat@jari.com", "Bassamat", "Tayeb", User.Role.EXTERNAL, null);
+        User admin = createUser("admin", "admin@netopia.ma", "Admin", "User", User.Role.ADMIN, null);
+        User majid = createUser("majid", "majid@netopia.ma", "Majid", "Hassan", User.Role.MANAGER, netopia);
+        User dev1 = createUser("ismail", "ismail@netopia.ma", "Ismail", "Baraka", User.Role.CONTRIBUTOR, netopia);
+        User dev2 = createUser("hanane", "hanane@netopia.ma", "Hanane", "Machkour", User.Role.CONTRIBUTOR, netopia);
+        User dev3 = createUser("wadii", "wadii@netopia.ma", "Wadii", "Mokhtari", User.Role.CONTRIBUTOR, harmony);
+        User dev4 = createUser("ahmed", "ahmed@netopia.ma", "Ahmed", "Azouzi", User.Role.CONTRIBUTOR, harmony);
+        User pmHarmony = createUser("karima", "karima@netopia.ma", "Karima", "Chari", User.Role.MANAGER, harmony);
+        User salim = createUser("salim", "salim@netopia.ma", "Salim", "Rachidi", User.Role.EXECUTIVE, null);
+        User bassamat = createUser("bassamat", "bassamat@netopia.ma", "Bassamat", "Tayeb", User.Role.EXTERNAL, null);
+        User younes = createUser("younes", "younes@mederp.net", "Younes", "Alami", User.Role.CONTRIBUTOR, mederp);
 
         // User rates for EVM
         createUserRate(admin, new BigDecimal("75.00"), LocalDate.of(2025, 1, 1));
@@ -137,11 +134,13 @@ public class DataSeeder implements CommandLineRunner {
         createUserRate(dev3, new BigDecimal("60.00"), LocalDate.of(2025, 1, 1));
         createUserRate(dev4, new BigDecimal("55.00"), LocalDate.of(2025, 1, 1));
         createUserRate(pmHarmony, new BigDecimal("85.00"), LocalDate.of(2025, 1, 1));
+        createUserRate(younes, new BigDecimal("70.00"), LocalDate.of(2025, 1, 1));
 
         // Programs
         Program ehealth = createProgram("eHealth", "EH", "Digital health transformation initiative", majid, netopia);
         Program mobilePlatform = createProgram("Mobile Platform", "MOB", "Mobile app platform development", pmHarmony, harmony);
         Program globalInit = createProgram("Global Initiative", "GI", "Cross-company strategic initiative", salim, null);
+        Program medErpProgram = createProgram("medERP", "MER", "Healthcare ERP and medical information systems", salim, mederp);
 
         // Projects with PMO fields
         Project fse = createProject("FSE", "FSE", "Full Stack Engineering platform",
@@ -164,6 +163,27 @@ public class DataSeeder implements CommandLineRunner {
                 new BigDecimal("50000"), new BigDecimal("50000"), BigDecimal.ZERO,
                 LocalDate.of(2025, 6, 1), LocalDate.of(2025, 11, 30), null);
 
+        // Additional project per program
+        Project eHealthPortal = createProject("Patient Portal", "PP", "Patient-facing health information portal",
+                ehealth, majid, Project.Stage.INITIATION, 6,
+                new BigDecimal("95000"), new BigDecimal("95000"), BigDecimal.ZERO,
+                LocalDate.of(2025, 7, 1), LocalDate.of(2026, 3, 31), netopia);
+
+        Project mobilePay = createProject("Mobile Payments", "MP", "In-app payment and billing integration",
+                mobilePlatform, pmHarmony, Project.Stage.PLANNING, 7,
+                new BigDecimal("120000"), new BigDecimal("120000"), new BigDecimal("5000"),
+                LocalDate.of(2025, 5, 1), LocalDate.of(2025, 12, 31), harmony);
+
+        Project dataWarehouse = createProject("Data Warehouse", "DW", "Enterprise data warehouse and analytics platform",
+                globalInit, salim, Project.Stage.PLANNING, 8,
+                new BigDecimal("180000"), new BigDecimal("180000"), new BigDecimal("10000"),
+                LocalDate.of(2025, 8, 1), LocalDate.of(2026, 6, 30), null);
+
+        Project medErpProject = createProject("medERP", "MER", "Healthcare ERP platform for hospital and clinic management",
+                medErpProgram, younes, Project.Stage.EXECUTION, 7,
+                new BigDecimal("250000"), new BigDecimal("250000"), new BigDecimal("30000"),
+                LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31), mederp);
+
         // Add members
         addMember(fse, admin);
         addMember(fse, dev1);
@@ -176,6 +196,18 @@ public class DataSeeder implements CommandLineRunner {
         addMember(mobileApp, admin);
         addMember(infraUpgrade, dev1);
         addMember(infraUpgrade, dev3);
+        addMember(eHealthPortal, dev2);
+        addMember(eHealthPortal, majid);
+        addMember(eHealthPortal, admin);
+        addMember(mobilePay, dev3);
+        addMember(mobilePay, dev4);
+        addMember(mobilePay, pmHarmony);
+        addMember(mobilePay, admin);
+        addMember(dataWarehouse, dev1);
+        addMember(dataWarehouse, salim);
+        addMember(dataWarehouse, admin);
+        addMember(medErpProject, younes);
+        addMember(medErpProject, admin);
 
         // External user assigned to FSE
         bassamat.setAssignedProject(fse);
@@ -192,6 +224,10 @@ public class DataSeeder implements CommandLineRunner {
         createBoardColumns(apiGateway, allStatuses);
         createBoardColumns(mobileApp, allStatuses);
         createBoardColumns(infraUpgrade, allStatuses);
+        createBoardColumns(eHealthPortal, allStatuses);
+        createBoardColumns(mobilePay, allStatuses);
+        createBoardColumns(dataWarehouse, allStatuses);
+        createBoardColumns(medErpProject, allStatuses);
 
         // Sprints
         Sprint sprint1 = createSprint("Sprint 1", "FSE MVP features", fse,
@@ -233,6 +269,10 @@ public class DataSeeder implements CommandLineRunner {
         Issue extIssue = createIssue("FSE-8", "Client feedback on login flow", fse, todo, Issue.Priority.MEDIUM, dev, bassamat, bassamat, null, 7);
         extIssue.setExternal(true);
         issueRepository.save(extIssue);
+
+        // Issues for medERP
+        createIssue("MER-1", "Amelioration design", medErpProject, inProgress, Issue.Priority.HIGH, dev, younes, younes, null, 0);
+        createIssue("MER-2", "Homologation FSE", medErpProject, todo, Issue.Priority.HIGH, dev, younes, younes, null, 1);
 
         // Labels
         createLabel(fse, "Frontend", "#3B82F6");
@@ -309,7 +349,7 @@ public class DataSeeder implements CommandLineRunner {
         return userRepository.save(user);
     }
 
-    private Company createCompany(String name, String key, String description, String address, String website, String logo) {
+    private Company createCompany(String name, String key, String description, String address, String website, String logo, Integer order) {
         Company company = new Company();
         company.setName(name);
         company.setKey(key);
@@ -317,6 +357,7 @@ public class DataSeeder implements CommandLineRunner {
         company.setAddress(address);
         company.setWebsite(website);
         company.setLogo(logo);
+        company.setOrder(order);
         company.setActive(true);
         return companyRepository.save(company);
     }
@@ -327,6 +368,7 @@ public class DataSeeder implements CommandLineRunner {
         config.setAddress(address);
         config.setWebsite(website);
         config.setLogo(logo);
+        config.setCurrency("DH");
         config.setCompany(company);
         return organizationConfigRepository.save(config);
     }

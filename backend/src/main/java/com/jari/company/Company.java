@@ -9,8 +9,8 @@ import java.time.Instant;
 @Entity
 @Table(name = "company", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"name"}),
-        @UniqueConstraint(columnNames = {"\"key\""})
-})
+        @UniqueConstraint(columnNames = {"key_"})
+    })
 public class Company {
 
     @Id
@@ -20,7 +20,7 @@ public class Company {
     @Column(nullable = false, unique = true)
     private String name;
 
-    @Column(name = "\"key\"", nullable = false, unique = true, length = 10)
+    @Column(name = "key_", nullable = false, unique = true, length = 10)
     private String key;
 
     @Column(columnDefinition = "TEXT")
@@ -34,6 +34,9 @@ public class Company {
 
     @Column(length = 500)
     private String logo;
+
+    @Column(name = "order_")
+    private Integer order;
 
     @Column(nullable = false)
     private boolean active = true;
@@ -62,6 +65,8 @@ public class Company {
     public void setWebsite(String website) { this.website = website; }
     public String getLogo() { return logo; }
     public void setLogo(String logo) { this.logo = logo; }
+    public Integer getOrder() { return order; }
+    public void setOrder(Integer order) { this.order = order; }
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
     public Instant getCreatedAt() { return createdAt; }

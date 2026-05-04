@@ -1,6 +1,11 @@
+nemo:
+  devmode: false
+  version: 0.9.0
+  build: ''
+
 spring:
   application:
-    name: jari
+    name: nemo
 
   datasource:
     url: jdbc:h2:file:./data/jari-db

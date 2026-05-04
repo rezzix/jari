@@ -48,6 +48,7 @@ public class CompanyService {
         company.setAddress(request.address());
         company.setWebsite(request.website());
         company.setLogo(request.logo());
+        company.setOrder(request.order());
         return companyRepository.save(company);
     }
 
@@ -64,6 +65,7 @@ public class CompanyService {
         if (request.address() != null) company.setAddress(request.address());
         if (request.website() != null) company.setWebsite(request.website());
         if (request.logo() != null) company.setLogo(request.logo());
+        if (request.order() != null) company.setOrder(request.order());
         if (request.active() != null) company.setActive(request.active());
         return companyRepository.save(company);
     }

@@ -1,4 +1,4 @@
-# Jari — REST API Design
+# Nemo — REST API Design
 
 Base path: `/api`
 
@@ -416,8 +416,8 @@ Create a project. **Admin, Manager.**
 **Request:**
 ```json
 {
-  "name": "Jari",
-  "key": "JARI",
+  "name": "Nemo",
+  "key": "NEMO",
   "description": "Internal project management system",
   "programId": 1,
   "managerId": 2,
@@ -916,7 +916,7 @@ Time spent per project in a date range.
 ```json
 {
   "data": [
-    { "projectId": 1, "projectName": "Jari", "projectKey": "JARI", "totalHours": 120.5 },
+    { "projectId": 1, "projectName": "Nemo", "projectKey": "NEMO", "totalHours": 120.5 },
     { "projectId": 2, "projectName": "Platform", "projectKey": "PLAT", "totalHours": 85.0 }
   ]
 }

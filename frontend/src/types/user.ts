@@ -20,6 +20,7 @@ export interface UserDto {
 export interface LoginRequest {
   username: string;
   password: string;
+  captcha?: string;
 }
 
 export interface UpdateProfileRequest {

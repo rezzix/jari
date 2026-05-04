@@ -2,7 +2,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import { getInitials } from '@/utils/format';
 
-export default function TopBar({ title }: { title: string }) {
+export default function TopBar({ title, version, devmode }: { title: string; version?: string; devmode?: boolean }) {
   const user = useAuthStore((s) => s.user);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
 
@@ -18,7 +18,16 @@ export default function TopBar({ title }: { title: string }) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
           </svg>
         </button>
-        <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
+        <h1 className="text-lg font-semibold text-gray-900 flex items-baseline gap-1.5">
+          {title}
+          {version && <span className="text-xs text-gray-400 font-mono">{version}</span>}
+        </h1>
+        {devmode && (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+            DevMode
+          </span>
+        )}
       </div>
       {user && (
         <div className="flex items-center gap-3">

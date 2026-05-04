@@ -17,7 +17,7 @@ public class AuditLog {
     @Column(name = "entity_id", nullable = false)
     private Long entityId;
 
-    @Column(nullable = false)
+    @Column(name = "action_", nullable = false)
     private String action;
 
     @Column(name = "old_value", columnDefinition = "TEXT")

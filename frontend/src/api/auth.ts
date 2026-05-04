@@ -12,3 +12,7 @@ export async function logout(): Promise<void> {
 export async function me(): Promise<UserDto> {
   return apiGet<UserDto>('/auth/me');
 }
+
+export async function getCaptcha(): Promise<{ question: string }> {
+  return apiGet<{ question: string }>('/auth/captcha');
+}

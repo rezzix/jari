@@ -9,7 +9,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 
 @Entity
-@Table(name = "\"user\"")
+@Table(name = "app_user")
 public class User {
 
     public enum Role { ADMIN, MANAGER, CONTRIBUTOR, EXECUTIVE, EXTERNAL }
@@ -34,7 +34,7 @@ public class User {
     private String lastName;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "role_", nullable = false)
     private Role role;
 
     @Column(name = "avatar_url")

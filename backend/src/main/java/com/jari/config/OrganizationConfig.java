@@ -27,6 +27,9 @@ public class OrganizationConfig {
     @Column(length = 500)
     private String logo;
 
+    @Column(length = 10)
+    private String currency;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id")
     @JsonIgnore
@@ -51,6 +54,8 @@ public class OrganizationConfig {
     public void setWebsite(String website) { this.website = website; }
     public String getLogo() { return logo; }
     public void setLogo(String logo) { this.logo = logo; }
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
     public Company getCompany() { return company; }
     public void setCompany(Company company) { this.company = company; }
     public Instant getCreatedAt() { return createdAt; }

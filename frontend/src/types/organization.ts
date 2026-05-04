@@ -4,6 +4,15 @@ export interface OrganizationConfig {
   address: string | null;
   website: string | null;
   logo: string | null;
+  currency: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface PublicConfigResponse {
+  organization: OrganizationConfig | null;
+  devmode: boolean;
+  version: string;
+  build: string;
+  currency: string;
 }

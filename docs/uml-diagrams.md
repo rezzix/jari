@@ -1,4 +1,4 @@
-# Jari — UML Diagrams
+# Nemo — UML Diagrams
 
 All diagrams use [Mermaid](https://mermaid.js.org/) syntax. Render them in GitHub, VS Code (with Mermaid extension), or [mermaid.live](https://mermaid.live).
 

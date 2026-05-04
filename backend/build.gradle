@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.jari'
-version = '0.1.0'
+version = '0.9.0'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_21
@@ -44,4 +44,17 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+// Generate build timestamp
+def buildTimestamp = new java.text.SimpleDateFormat('yyMMddHH').format(new Date())
+
+tasks.named('bootRun') {
+    jvmArgs "-Dnemo.build=${buildTimestamp}"
+}
+
+tasks.withType(Jar) {
+    manifest {
+        attributes 'Nemo-Build': buildTimestamp
+    }
 }

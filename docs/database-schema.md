@@ -1,4 +1,4 @@
-# Jari — Database Schema Design
+# Nemo — Database Schema Design
 
 ## Entity-Relationship Diagram (Textual)
 
@@ -123,7 +123,7 @@ Per-company settings (plus one global row where company_id = null). Managed by a
 |--------|------|-------------|-------------|
 | id | BIGINT | PK, auto-increment | |
 | name | VARCHAR(255) | NOT NULL | |
-| key | VARCHAR(10) | NOT NULL, UNIQUE | Short identifier (e.g. "JARI") |
+| key | VARCHAR(10) | NOT NULL, UNIQUE | Short identifier (e.g. "NEMO") |
 | description | TEXT | | |
 | program_id | BIGINT | FK → program(id), NOT NULL | Parent program |
 | manager_id | BIGINT | FK → user(id), NOT NULL | Project manager |
@@ -475,7 +475,7 @@ On first startup, the DataSeeder creates:
 | Table | Default Rows |
 |-------|-------------|
 | company | "Acme Corp" (ACME), "Global Corp" (GCORP) |
-| organization_config | "Jari Global" (company_id=null), "Acme Corp" (ACME), "Global Corp" (GCORP) |
+| organization_config | "Nemo Global" (company_id=null), "Acme Corp" (ACME), "Global Corp" (GCORP) |
 | issue_type | Project Management, Tech Lead, Architecture, Development, Data Analysis, Testing |
 | issue_status | To Do (TODO, is_default), In Progress (IN_PROGRESS), Done (DONE) |
 | user | admin (ADMIN, global), cto (EXECUTIVE, global), sarah (MANAGER, ACME), alex (CONTRIBUTOR, ACME), maria (CONTRIBUTOR, ACME), diana (MANAGER, GCORP), james (CONTRIBUTOR, GCORP), lee (CONTRIBUTOR, GCORP) |

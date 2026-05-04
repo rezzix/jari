@@ -1,17 +1,21 @@
-# Jari
+# Nemo
 
-A Jira-like project management system with time tracking and built-in project documentation.
+A project management system with PMO capabilities, time tracking, and built-in project documentation.
 
 ## Features
 
-- **Issue Tracking** — Create, assign, and manage issues with priorities, labels, types, and statuses
-- **Kanban Board** — Drag-and-drop issue cards between status columns
-- **Time Tracking** — Log hours against issues, weekly timesheet view, time reports
-- **Project Documentation** — Wiki-style pages with nested tree structure and search
+- **Program & Portfolio Management** — Organize projects into programs with portfolio-level visibility
+- **Project Phases & Deliverables** — Track project phases, milestones, and deliverables
+- **EVM & Budget Tracking** — Earned Value Management with budget and cost tracking
+- **RAID Logs & Risk Management** — Risks, assumptions, issues, and dependencies per project
+- **Issue Tracking & Kanban Boards** — Create, assign, and manage issues with priorities, labels, types, and statuses
 - **Sprint Management** — Backlog view, sprint creation, issue assignment to sprints
-- **Admin Panel** — User management, programs, organization config, issue types/statuses
+- **Time Tracking & Timesheets** — Log hours against issues, weekly timesheet view, time reports
+- **Wiki Docs & Mermaid Diagrams** — Wiki-style pages with nested tree structure, search, and Mermaid diagram support
+- **Reports & Dashboards** — PMO dashboard, cross-project reports, and personal dashboard
 - **Multi-Company Support** — Projects and users belong to companies or are global; company-scoped visibility
-- **Role-Based Access** — Admin, Manager, Executive, and Contributor roles with appropriate permissions
+- **External Users** — Restricted access for external stakeholders with project-scoped visibility
+- **Role-Based Access** — Admin, Manager, Executive, Contributor, and External roles with appropriate permissions
 
 ## Tech Stack
 
@@ -24,29 +28,31 @@ A Jira-like project management system with time tracking and built-in project do
 ## Project Structure
 
 ```
-jari/
+nemo/
 ├── backend/                   # Spring Boot application
 │   └── src/main/java/com/jari/
 │       ├── attachment/         # File attachments
 │       ├── common/             # Audit, DTOs, exceptions, storage
 │       ├── config/             # Issue types/statuses, org config, data seeder
-│       ├── documentation/     # Wiki pages
-│       ├── issue/             # Issues, comments
-│       ├── program/           # Programs (portfolios)
-│       ├── project/           # Projects, members, labels, board columns
-│       ├── security/          # Auth, Spring Security config
-│       ├── sprint/            # Sprints, backlog
-│       ├── timetracking/      # Time logs, timesheets, reports
-│       └── user/              # Users
+│       ├── documentation/      # Wiki pages
+│       ├── issue/              # Issues, comments
+│       ├── phase/              # Phases, deliverables
+│       ├── pmo/                # RAID items, PMO dashboard
+│       ├── program/            # Programs (portfolios)
+│       ├── project/            # Projects, members, labels, board columns
+│       ├── security/           # Auth, Spring Security config
+│       ├── sprint/             # Sprints, backlog
+│       ├── timetracking/       # Time logs, timesheets, reports
+│       └── user/               # Users
 ├── frontend/                  # React application
 │   └── src/
-│       ├── api/               # API client modules
-│       ├── components/        # Layout, guards, common components
-│       ├── hooks/             # Custom React hooks
-│       ├── pages/             # Page components
-│       ├── stores/            # Zustand stores
-│       ├── types/             # TypeScript type definitions
-│       └── utils/             # Formatting utilities
+│       ├── api/                # API client modules
+│       ├── components/         # Layout, guards, common components
+│       ├── hooks/              # Custom React hooks
+│       ├── pages/              # Page components
+│       ├── stores/             # Zustand stores
+│       ├── types/              # TypeScript type definitions
+│       └── utils/              # Formatting utilities
 ├── docs/                      # Architecture and API documentation
 └── postman/                   # API test collection
 ```
@@ -84,13 +90,14 @@ The data seeder creates these test accounts (all passwords: `password123`):
 | Username | Role | Company |
 |----------|------|---------|
 | admin | ADMIN | Global |
-| cto | EXECUTIVE | Global |
-| sarah | MANAGER | Acme Corp |
-| alex | CONTRIBUTOR | Acme Corp |
-| maria | CONTRIBUTOR | Acme Corp |
-| diana | MANAGER | Global Corp |
-| james | CONTRIBUTOR | Global Corp |
-| lee | CONTRIBUTOR | Global Corp |
+| majid | MANAGER | Netopia |
+| ismail | CONTRIBUTOR | Netopia |
+| hanane | CONTRIBUTOR | Netopia |
+| karima | MANAGER | Harmony |
+| wadii | CONTRIBUTOR | Harmony |
+| ahmed | CONTRIBUTOR | Harmony |
+| salim | EXECUTIVE | Global |
+| bassamat | EXTERNAL | Netopia (FSE project) |
 
 ## API Overview
 
@@ -107,6 +114,7 @@ The data seeder creates these test accounts (all passwords: `password123`):
 | Time Logs | `/api/time-logs` |
 | Timesheets | `/api/timesheets` |
 | Sprints | `/api/projects/{projectId}/sprints` |
+| Phases | `/api/projects/{projectId}/phases` |
 | Admin | `/api/admin/*` |
 
 Full API documentation is available in `docs/rest-api.md` and the Postman collection in `postman/`.

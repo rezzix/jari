@@ -1,8 +1,8 @@
-# Jari — High-Level System Architecture
+# Nemo — High-Level System Architecture
 
 ## 1. Overview
 
-Jari is a multi-company project management system combining issue tracking, time tracking, project documentation, and PMO capabilities (RAID logs, EVM). It is deployed as a single Spring Boot JAR serving both the REST API and the React SPA.
+Nemo is a multi-company project management system combining issue tracking, time tracking, project documentation, and PMO capabilities (RAID logs, EVM). It is deployed as a single Spring Boot JAR serving both the REST API and the React SPA.
 
 ---
 

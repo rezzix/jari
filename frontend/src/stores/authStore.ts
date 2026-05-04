@@ -7,7 +7,7 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
   isAuthenticated: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string, captcha?: string) => Promise<void>;
   logout: () => Promise<void>;
   checkSession: () => Promise<void>;
   clearError: () => void;
@@ -21,10 +21,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   error: null,
   isAuthenticated: false,
 
-  login: async (username, password) => {
+  login: async (username, password, captcha) => {
     set({ isLoading: true, error: null });
     try {
-      const user = await authApi.login({ username, password });
+      const user = await authApi.login({ username, password, captcha });
       set({ user, isAuthenticated: true, isLoading: false });
     } catch (err: unknown) {
       const message =

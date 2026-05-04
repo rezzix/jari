@@ -25,7 +25,7 @@ public class RaidItem {
     private Project project;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "type_", nullable = false)
     private RaidType type;
 
     @Column(nullable = false)

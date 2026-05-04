@@ -122,20 +122,43 @@ export default function UsersTab() {
   // Group users by company (tabs), with externals as a separate tab
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [showActive, setShowActive] = useState(true);
+  const [companies, setCompanies] = useState<CompanyDto[]>([]);
+
+  useEffect(() => {
+    listCompanies().then((res) => {
+      const sorted = [...res.data].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+      setCompanies(sorted);
+    });
+  }, []);
+
+  const rolePriority: Record<string, number> = { ADMIN: 0, EXECUTIVE: 1, MANAGER: 2, CONTRIBUTOR: 3, EXTERNAL: 4 };
+  const sortByRole = (a: UserDto, b: UserDto) => (rolePriority[a.role] ?? 5) - (rolePriority[b.role] ?? 5);
 
   const externalUsers = users.filter((u) => u.role === 'EXTERNAL');
   const companyUsers = users.filter((u) => u.role !== 'EXTERNAL');
-  const companyNames = Array.from(new Set(companyUsers.map((u) => u.companyName ?? 'Global')));
+
+  // Build ordered company list from fetched companies, then add any company names not in the list
+  const companyOrder = companies.map((c) => c.name);
+  const userCompanyNames = Array.from(new Set(companyUsers.map((u) => u.companyName ?? 'Global')));
+  // Companies from user data not in the fetched companies list (e.g. "Global")
+  const extraCompanyNames = userCompanyNames.filter((n) => n !== 'Global' && !companyOrder.includes(n));
+
   const tabs: { key: string; label: string }[] = [
-    ...companyNames.map((c) => ({ key: c, label: c })),
+    // Global users first
+    ...(userCompanyNames.includes('Global') ? [{ key: 'Global', label: 'Global' }] : []),
+    // Companies in their order
+    ...companyOrder.filter((name) => userCompanyNames.includes(name)).map((c) => ({ key: c, label: c })),
+    // Any companies not in the fetched list
+    ...extraCompanyNames.map((c) => ({ key: c, label: c })),
+    // Externals last
     ...(externalUsers.length > 0 ? [{ key: 'Externals', label: 'Externals' }] : []),
   ];
 
   // Default to first tab
   const currentTab = activeTab ?? tabs[0]?.key ?? '';
   const filteredUsers = (() => {
-    if (currentTab === 'Externals') return externalUsers;
-    return companyUsers.filter((u) => (u.companyName ?? 'Global') === currentTab);
+    if (currentTab === 'Externals') return [...externalUsers].sort(sortByRole);
+    return [...companyUsers.filter((u) => (u.companyName ?? 'Global') === currentTab)].sort(sortByRole);
   })();
   const visibleUsers = filteredUsers.filter((u) => showActive ? u.active : !u.active);
 

@@ -8,7 +8,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 
 @Entity
-@Table(name = "comment")
+@Table(name = "issue_comment")
 public class Comment {
 
     @Id

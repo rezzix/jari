@@ -1,3 +1,6 @@
+nemo:
+  devmode: false
+
 spring:
   datasource:
     url: ${JARI_DB_URL}

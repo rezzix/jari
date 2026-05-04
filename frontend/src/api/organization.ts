@@ -1,13 +1,13 @@
 import { apiGet } from './client';
-import type { OrganizationConfig } from '@/types';
+import type { OrganizationConfig, PublicConfigResponse } from '@/types';
 
 export async function getOrganization(): Promise<OrganizationConfig> {
   return apiGet<OrganizationConfig>('/organization');
 }
 
-export async function getPublicOrganization(): Promise<OrganizationConfig | null> {
+export async function getPublicOrganization(): Promise<PublicConfigResponse | null> {
   try {
-    return await apiGet<OrganizationConfig>('/organization/public');
+    return await apiGet<PublicConfigResponse>('/organization/public');
   } catch {
     return null;
   }

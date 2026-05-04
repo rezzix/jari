@@ -5,6 +5,7 @@ import com.jari.common.exception.EntityNotFoundException;
 import com.jari.company.Company;
 import com.jari.company.CompanyRepository;
 import com.jari.security.AuthHelper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,18 +19,28 @@ public class OrganizationConfigController {
     private final OrganizationConfigRepository repository;
     private final CompanyRepository companyRepository;
     private final AuthHelper authHelper;
+    private final boolean devMode;
+    private final String version;
+    private final String build;
 
-    public OrganizationConfigController(OrganizationConfigRepository repository, CompanyRepository companyRepository, AuthHelper authHelper) {
+    public OrganizationConfigController(OrganizationConfigRepository repository, CompanyRepository companyRepository, AuthHelper authHelper,
+                                        @Value("${nemo.devmode:false}") boolean devMode,
+                                        @Value("${nemo.version:0.9.0}") String version,
+                                        @Value("${nemo.build:}") String build) {
         this.repository = repository;
         this.companyRepository = companyRepository;
         this.authHelper = authHelper;
+        this.devMode = devMode;
+        this.version = version;
+        this.build = build;
     }
 
     @GetMapping("/public")
-    public ResponseEntity<ApiResponse<OrganizationConfig>> getPublic() {
+    public ResponseEntity<ApiResponse<PublicConfigDto>> getPublic() {
         OrganizationConfig config = repository.findByCompanyIdIsNull()
                 .orElse(null);
-        return ResponseEntity.ok(ApiResponse.of(config));
+        String currency = config != null ? config.getCurrency() : "DH";
+        return ResponseEntity.ok(ApiResponse.of(new PublicConfigDto(config, devMode, version, build, currency)));
     }
 
     @GetMapping
@@ -70,6 +81,7 @@ public class OrganizationConfigController {
         config.setAddress(updated.getAddress());
         config.setWebsite(updated.getWebsite());
         config.setLogo(updated.getLogo());
+        config.setCurrency(updated.getCurrency());
         return ResponseEntity.ok(ApiResponse.of(repository.save(config)));
     }
 }

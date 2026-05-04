@@ -1,4 +1,5 @@
 import type { IssuePriority } from '@/types';
+import { getCurrency } from '@/hooks/useVersion';
 
 export function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', {
@@ -117,5 +118,7 @@ export function deliverableStateLabel(state: string): string {
 
 export function formatCurrency(value: number | null | undefined): string {
   if (value == null) return '—';
-  return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  const symbol = getCurrency();
+  const formatted = value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/,/g, "'");
+  return symbol + ' ' + formatted;
 }

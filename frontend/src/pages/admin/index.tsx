@@ -1,18 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { IssueTypeDto, IssueStatusDto, IssueStatusCategory } from '@/types';
-import Field from '@/components/common/Field';
 import Spinner from '@/components/common/Spinner';
 import {
-  getOrganization, updateOrganization,
   listIssueTypes, createIssueType, updateIssueType, deleteIssueType,
   listIssueStatuses, createIssueStatus, updateIssueStatus, deleteIssueStatus,
 } from '@/api/admin';
 import UsersTab from './UsersTab';
-import ProgramsTab from './ProgramsTab';
 import CompaniesTab from './CompaniesTab';
 import IssueStatusesTab from './StatusesTab';
 
-type Tab = 'companies' | 'programs' | 'users' | 'issues' | 'organization';
+type Tab = 'companies' | 'users' | 'settings';
 
 function SpinnerWrapper() {
   return (
@@ -27,10 +24,8 @@ export default function AdminPage() {
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'companies', label: 'Companies' },
-    { key: 'programs', label: 'Programs' },
     { key: 'users', label: 'Users' },
-    { key: 'issues', label: 'Issues' },
-    { key: 'organization', label: 'Organization' },
+    { key: 'settings', label: 'Settings' },
   ];
 
   return (
@@ -56,78 +51,15 @@ export default function AdminPage() {
       </div>
 
       {activeTab === 'companies' && <CompaniesTab />}
-      {activeTab === 'programs' && <ProgramsTab />}
       {activeTab === 'users' && <UsersTab />}
-      {activeTab === 'issues' && <IssuesTab />}
-      {activeTab === 'organization' && <OrganizationTab />}
-    </div>
-  );
-}
-
-// ─── Organization Tab ─────────────────────────────────────────────────────────
-
-function OrganizationTab() {
-  const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
-  const [website, setWebsite] = useState('');
-  const [logo, setLogo] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    getOrganization().then((data) => {
-      setName(data.name);
-      setAddress(data.address ?? '');
-      setWebsite(data.website ?? '');
-      setLogo(data.logo ?? '');
-      setLoading(false);
-    });
-  }, []);
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    setMsg(null);
-    setError(null);
-    try {
-      await updateOrganization({ name, address: address || undefined, website: website || undefined, logo: logo || undefined });
-      setMsg('Organization updated successfully.');
-    } catch {
-      setError('Failed to update organization.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (loading) return <SpinnerWrapper />;
-
-  return (
-    <div className="max-w-lg">
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Organization Settings</h3>
-        <form onSubmit={handleSave} className="space-y-4">
-          <Field label="Organization Name" value={name} onChange={setName} required />
-          <Field label="Address" value={address} onChange={setAddress} textarea />
-          <Field label="Website" value={website} onChange={setWebsite} />
-          <Field label="Logo URL" value={logo} onChange={setLogo} />
-          {msg && <div className="bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg px-3 py-2">{msg}</div>}
-          {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2">{error}</div>}
-          <div className="flex justify-end">
-            <button type="submit" disabled={saving} className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50 flex items-center gap-2">
-              {saving && <Spinner className="h-4 w-4" />}Save
-            </button>
-          </div>
-        </form>
-      </div>
+      {activeTab === 'settings' && <SettingsTab />}
     </div>
   );
 }
 
 // ─── Issues Tab (merged Types + Statuses) ─────────────────────────────────────
 
-function IssuesTab() {
+function SettingsTab() {
   return (
     <div className="space-y-8">
       <IssueTypesSection />

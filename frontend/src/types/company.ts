@@ -6,6 +6,7 @@ export interface CompanyDto {
   address: string | null;
   website: string | null;
   logo: string | null;
+  order: number | null;
   active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -18,6 +19,7 @@ export interface CreateCompanyRequest {
   address?: string;
   website?: string;
   logo?: string;
+  order?: number;
 }
 
 export interface UpdateCompanyRequest {
@@ -26,5 +28,6 @@ export interface UpdateCompanyRequest {
   address?: string;
   website?: string;
   logo?: string;
+  order?: number;
   active?: boolean;
 }

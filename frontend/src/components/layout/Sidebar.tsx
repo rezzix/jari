@@ -24,7 +24,7 @@ export default function Sidebar() {
       items: [
         { to: '/', label: 'Dashboard', icon: DashboardIcon },
         ...(role === 'ADMIN' ? [{ to: '/admin', label: 'Admin', icon: AdminIcon }] : []),
-        { to: '/projects', label: 'Projects', icon: ProjectsIcon },
+        ...(role !== 'ADMIN' ? [{ to: '/projects', label: 'Projects', icon: ProjectsIcon }] : []),
         ...(!isExternal && (role === 'ADMIN' || role === 'MANAGER' || role === 'EXECUTIVE')
           ? [{ to: '/programs', label: 'Programs', icon: ProgramsIcon }]
           : []),
@@ -60,9 +60,11 @@ export default function Sidebar() {
     >
       <div className="flex items-center gap-3 px-4 h-16 border-b border-white/10">
         <div className="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center font-bold text-sm">
-          J
+          N
         </div>
-        {!collapsed && <span className="font-semibold text-lg">Jari</span>}
+        {!collapsed && (
+          <span className="font-semibold text-lg">Nemo</span>
+        )}
       </div>
 
       <nav className="flex-1 py-4 px-2 space-y-4">

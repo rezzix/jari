@@ -11,6 +11,7 @@ public record CompanyDto(
         String address,
         String website,
         String logo,
+        Integer order,
         boolean active,
         String createdAt,
         String updatedAt
@@ -21,7 +22,8 @@ public record CompanyDto(
             String description,
             String address,
             String website,
-            String logo
+            String logo,
+            Integer order
     ) {}
 
     public record UpdateRequest(
@@ -30,6 +32,7 @@ public record CompanyDto(
             String address,
             String website,
             String logo,
+            Integer order,
             Boolean active
     ) {}
 }

@@ -14,19 +14,20 @@ import RaidTab from './RaidTab';
 import PhasesTab from './PhasesTab';
 import SettingsTab from './SettingsTab';
 import MembersTab from './MembersTab';
-import LabelsTab from './LabelsTab';
+import SummaryTab from './SummaryTab';
 import MarkdownRenderer from '@/components/common/MarkdownRenderer';
 
-type Tab = 'issues' | 'board' | 'docs' | 'raid' | 'phases' | 'members' | 'labels' | 'settings';
+type Tab = 'summary' | 'issues' | 'board' | 'docs' | 'raid' | 'phases' | 'members' | 'settings';
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [project, setProject] = useState<ProjectDto | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>('issues');
+  const [activeTab, setActiveTab] = useState<Tab>('summary');
   const { user } = useAuth();
-  const canEdit = user?.role === 'ADMIN' || user?.role === 'MANAGER';
-  const isExternal = user?.role === 'EXTERNAL';
+  const role = user?.role;
+  const canEdit = role === 'ADMIN' || role === 'MANAGER';
+  const isExternal = role === 'EXTERNAL';
 
   useEffect(() => {
     if (!id) return;
@@ -37,15 +38,32 @@ export default function ProjectDetailPage() {
   if (loading) return <div className="flex items-center justify-center h-64"><Spinner className="h-8 w-8 text-primary-600" /></div>;
   if (!project) return <div className="text-center text-gray-500 py-8">Project not found.</div>;
 
-  const tabs: { key: Tab; label: string }[] = [
+  // Role-based tab visibility:
+  // EXECUTIVE: summary, board, raid, docs
+  // MANAGER:   summary, board, raid, issues, docs, phases, members, settings
+  // CONTRIBUTOR: issues, board, docs
+  // EXTERNAL: issues, board (existing behavior)
+  const tabs: { key: Tab; label: string }[] = role === 'EXECUTIVE' ? [
+    { key: 'summary', label: 'Summary' },
+    { key: 'board', label: 'Board' },
+    { key: 'raid', label: 'RAID' },
+    { key: 'docs', label: 'Docs' },
+  ] : role === 'MANAGER' ? [
+    { key: 'summary', label: 'Summary' },
+    { key: 'board', label: 'Board' },
+    { key: 'raid', label: 'RAID' },
+    { key: 'issues', label: 'Issues' },
+    { key: 'docs', label: 'Docs' },
+    { key: 'phases', label: 'Phases' },
+    { key: 'members', label: 'Members' },
+    { key: 'settings', label: 'Settings' },
+  ] : role === 'CONTRIBUTOR' ? [
     { key: 'issues', label: 'Issues' },
     { key: 'board', label: 'Board' },
-    ...(!isExternal ? [{ key: 'docs' as Tab, label: 'Docs' }] : []),
-    ...(!isExternal ? [{ key: 'raid' as Tab, label: 'RAID' }] : []),
-    { key: 'phases', label: 'Phases' },
-    ...(!isExternal ? [{ key: 'members' as Tab, label: 'Members' }] : []),
-    ...(!isExternal ? [{ key: 'labels' as Tab, label: 'Labels' }] : []),
-    ...(canEdit ? [{ key: 'settings' as Tab, label: 'Settings' }] : []),
+    { key: 'docs', label: 'Docs' },
+  ] : [ // EXTERNAL or fallback
+    { key: 'issues', label: 'Issues' },
+    { key: 'board', label: 'Board' },
   ];
 
   return (
@@ -81,14 +99,14 @@ export default function ProjectDetailPage() {
         </nav>
       </div>
 
+      {activeTab === 'summary' && <SummaryTab projectId={project.id} managerId={project.managerId} />}
       {activeTab === 'issues' && <IssuesTab projectId={project.id} projectKey={project.key} canEdit={canEdit} isExternal={isExternal} />}
       {activeTab === 'board' && <BoardTab projectId={project.id} projectKey={project.key} isExternal={isExternal} />}
       {activeTab === 'docs' && <DocsTab projectId={project.id} />}
       {activeTab === 'raid' && <RaidTab projectId={project.id} canEdit={canEdit} />}
       {activeTab === 'phases' && <PhasesTab projectId={project.id} canEdit={canEdit} />}
-      {activeTab === 'settings' && <SettingsTab project={project} onUpdate={(p) => setProject(p)} />}
+      {activeTab === 'settings' && <SettingsTab project={project} onUpdate={(p) => setProject(p)} canEdit={canEdit} />}
       {activeTab === 'members' && <MembersTab projectId={project.id} managerId={project.managerId} canEdit={canEdit} />}
-      {activeTab === 'labels' && <LabelsTab projectId={project.id} canEdit={canEdit} />}
     </div>
   );
 }

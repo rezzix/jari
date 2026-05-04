@@ -4,7 +4,7 @@ export type { UserDto, UserRole, LoginRequest, UpdateProfileRequest, PasswordCha
 export type { ProjectDto, CreateProjectRequest, UpdateProjectRequest, MemberDto, LabelDto, LabelCreateRequest, BoardColumnDto, BoardConfigDto, BoardUpdateRequest } from './project';
 export type { IssueDto, IssuePriority, CreateIssueRequest, UpdateIssueRequest, CommentDto, CreateCommentRequest, UpdateCommentRequest } from './issue';
 export type { ProgramDto, CreateProgramRequest, UpdateProgramRequest } from './program';
-export type { OrganizationConfig } from './organization';
+export type { OrganizationConfig, PublicConfigResponse } from './organization';
 export type { SprintDto, CreateSprintRequest, UpdateSprintRequest } from './sprint';
 export type { TimeLogDto, CreateTimeLogRequest, UpdateTimeLogRequest } from './timeLog';
 export type { WikiPageDto, WikiTreeItem, CreateWikiPageRequest, UpdateWikiPageRequest, WikiSearchHit } from './wiki';
