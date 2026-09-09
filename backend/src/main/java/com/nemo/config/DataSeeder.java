@@ -472,10 +472,10 @@ public class DataSeeder implements CommandLineRunner {
         SeedingProfile p = "dev".equals(mode) ? devProfile(year) : demoProfile(year);
 
         // Companies
-        String c1Logo = "https://mederp.net/downloads/nemo/" + p.companyNames()[0].toLowerCase() + ".jpg";
-        String c2Logo = "https://mederp.net/downloads/nemo/" + p.companyNames()[1].toLowerCase() + ".jpg";
-        String c3Logo = "https://mederp.net/downloads/nemo/" + p.companyNames()[2].toLowerCase() + ".jpg";
-        String c4Logo = "https://mederp.net/downloads/nemo/" + p.companyNames()[3].toLowerCase() + ".jpg";
+        String c1Logo = "/logos/" + p.companyNames()[0].toLowerCase() + ".jpg";
+        String c2Logo = "/logos/" + p.companyNames()[1].toLowerCase() + ".jpg";
+        String c3Logo = "/logos/" + p.companyNames()[2].toLowerCase() + ".jpg";
+        String c4Logo = "/logos/" + p.companyNames()[3].toLowerCase() + ".jpg";
 
         Company company1 = createCompany(p.companyNames()[0], p.companyKeys()[0], p.companyDescriptions()[0],
                 p.companyAddresses()[0], p.companyWebsites()[0], c1Logo, 1);
@@ -489,7 +489,7 @@ public class DataSeeder implements CommandLineRunner {
         // Organization config (global only)
         createOrgConfig(p.groupName(), null,
                 p.companyAddresses()[0], p.companyWebsites()[0],
-                "https://mederp.net/downloads/nemo/" + p.groupName().split(" ")[0].toLowerCase() + ".jpg",
+                "/logos/" + p.groupName().split(" ")[0].toLowerCase() + ".jpg",
                 p.currency());
 
         // Users

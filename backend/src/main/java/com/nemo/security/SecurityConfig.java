@@ -40,6 +40,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/login", "/api/auth/logout", "/api/auth/captcha", "/api/auth/dev-users").permitAll()
                 .requestMatchers("/api/organization/public").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
+                .requestMatchers("/logos/**").permitAll()
                 .requestMatchers("/ws/**").permitAll()
                 .anyRequest().authenticated()
             )
